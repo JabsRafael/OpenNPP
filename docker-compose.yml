@@ -12,22 +12,46 @@ services:
             - MYSQL_DATABASE=scadalts
         expose: ["3306"]
         volumes:
-            -   ./docker/volumes/databases:/home/
+            - ./docker/volumes/databases:/home/
+        healthcheck:
+            test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        networks:
+            - default
+
     scadalts:
         image: scadalts/scadalts:latest
         ports: 
             - "8080:8080"
         depends_on: 
-            - database
+            database:
+                condition: service_healthy
         expose: ["8080", "8000"]
         links:
             - database:database
+        networks:
+            - default
+
     openplc:
         build:
           context: ./OpenPLC
           dockerfile: Dockerfile
         ports: 
-            - "8084:8084"
-        expose: ["8084"]
+            - "8082:8081"
+        expose: ["8082"]
         links:
             - database:database
+        privileged: true
+        networks:
+            - default
+
+networks:
+  default:
+    name: global_infra
+    external: true
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
