@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Tooling do worktree (Prometeu)
+.prometeu/
+
+# Volumes/dados locais (ScadaLTS/MySQL)
+docker/volumes/
+
+# SO / editor
+.DS_Store
+*.swp

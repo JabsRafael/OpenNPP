@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenNPP — HMI AP1000 (Simulador OT)</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <div class="brand">OpenNPP <small>AP1000-like · Simulador OT / Cyber Range</small></div>
+  <div class="stat"><span class="v" id="s-power">--</span><span class="k">Potência</span></div>
+  <div class="stat"><span class="v" id="s-mwe">--</span><span class="k">MW elétrico</span></div>
+  <div class="stat"><span class="v" id="s-tavg">--</span><span class="k">Tavg</span></div>
+  <div class="stat"><span class="v" id="s-przr">--</span><span class="k">Pressão PZR</span></div>
+  <div class="stat"><span class="v" id="s-time">--</span><span class="k">Tempo sim</span></div>
+  <div class="status-badge" id="s-status">NORMAL</div>
+</header>
+
+<div class="wrap">
+  <!-- ============================ MÍMICO ============================ -->
+  <div class="card">
+    <h3>Diagrama da planta</h3>
+    <svg class="mimic" viewBox="0 0 1000 560" xmlns="http://www.w3.org/2000/svg">
+      <!-- contenção -->
+      <rect class="containment" x="20" y="60" width="560" height="480" rx="12"/>
+      <text class="lbl" x="30" y="52">Contenção</text>
+
+      <!-- pipes loop 1 (GV1, topo) -->
+      <polyline id="hot1" class="pipe hot" points="150,320 150,150 360,150"/>
+      <polyline id="cold1" class="pipe cold" points="360,215 250,215 250,300 150,300"/>
+      <!-- pipes loop 2 (GV2, base) -->
+      <polyline id="hot2" class="pipe hot" points="150,400 150,470 360,470"/>
+      <polyline id="cold2" class="pipe cold" points="360,405 250,405 250,360 150,360"/>
+      <!-- vapor para turbina -->
+      <polyline id="steam1" class="pipe steam" points="470,150 640,150 640,120 690,120"/>
+      <polyline id="steam2" class="pipe steam" points="470,470 660,470 660,175 690,175"/>
+      <!-- retorno condensado -->
+      <polyline id="feed" class="pipe cold" points="760,300 560,300 560,510 250,510 250,470"/>
+
+      <!-- núcleo do reator -->
+      <rect id="core" class="core" x="105" y="320" width="90" height="80" rx="6"/>
+      <text class="lbl" x="150" y="315" text-anchor="middle">Reator</text>
+      <text class="rd big" data-k="reactor_power_pct" x="150" y="352" text-anchor="middle">--</text>
+      <text class="rd" data-k="fuel_temp_c" x="150" y="372" text-anchor="middle">--</text>
+      <text class="rd" data-k="rod_position_pct" x="150" y="390" text-anchor="middle">--</text>
+
+      <!-- pressurizador -->
+      <rect class="vessel hot" x="270" y="95" width="42" height="95" rx="6"/>
+      <line class="pipe hot" x1="291" y1="190" x2="291" y2="150"/>
+      <text class="lbl" x="291" y="88" text-anchor="middle">PZR</text>
+      <text class="rd" data-k="przr_pressure_bar" x="291" y="128" text-anchor="middle">--</text>
+      <text class="rd" data-k="przr_level_pct" x="291" y="146" text-anchor="middle">--</text>
+
+      <!-- RCP pumps -->
+      <circle id="rcp1" class="node" cx="250" cy="215" r="12"/>
+      <circle id="rcp2" class="node" cx="210" cy="300" r="12"/>
+      <circle id="rcp3" class="node" cx="250" cy="405" r="12"/>
+      <circle id="rcp4" class="node" cx="210" cy="360" r="12"/>
+      <text class="lbl" x="230" y="440" text-anchor="middle">4× RCP</text>
+
+      <!-- GV1 -->
+      <rect id="sg1" class="vessel" x="360" y="110" width="110" height="105" rx="6"/>
+      <text class="lbl" x="415" y="105" text-anchor="middle">Gerador de Vapor 1</text>
+      <text class="rd" data-k="sg1_pressure_bar" x="415" y="140" text-anchor="middle">--</text>
+      <text class="rd" data-k="sg1_level_pct" x="415" y="160" text-anchor="middle">--</text>
+      <text class="rd" data-k="sg1_steam_flow_kgs" x="415" y="180" text-anchor="middle">--</text>
+      <!-- GV2 -->
+      <rect id="sg2" class="vessel" x="360" y="405" width="110" height="105" rx="6"/>
+      <text class="lbl" x="415" y="400" text-anchor="middle">Gerador de Vapor 2</text>
+      <text class="rd" data-k="sg2_pressure_bar" x="415" y="435" text-anchor="middle">--</text>
+      <text class="rd" data-k="sg2_level_pct" x="415" y="455" text-anchor="middle">--</text>
+      <text class="rd" data-k="sg2_steam_flow_kgs" x="415" y="475" text-anchor="middle">--</text>
+
+      <!-- turbina / gerador (fora da contenção) -->
+      <rect id="turbine" class="vessel" x="690" y="100" width="90" height="95" rx="6"/>
+      <text class="lbl" x="735" y="94" text-anchor="middle">Turbina / Gerador</text>
+      <text class="rd big" data-k="gen_power_mwe" x="735" y="140" text-anchor="middle">--</text>
+      <text class="rd" data-k="turbine_rpm" x="735" y="162" text-anchor="middle">--</text>
+      <circle id="gen" class="node" cx="820" cy="147" r="18"/>
+      <text class="lbl" x="820" y="152" text-anchor="middle">G</text>
+      <line class="pipe cold" x1="780" y1="147" x2="802" y2="147"/>
+
+      <!-- condensador -->
+      <rect class="vessel" x="700" y="270" width="90" height="40" rx="6"/>
+      <text class="lbl" x="745" y="295" text-anchor="middle">Condensador</text>
+      <line class="pipe steam" x1="735" y1="195" x2="735" y2="270"/>
+
+      <!-- sistemas de segurança passiva (PXS) -->
+      <text class="lbl" x="70" y="500">Segurança passiva (PXS)</text>
+      <g id="pxs">
+        <rect id="cmt" class="node" x="60" y="150" width="34" height="34" rx="4"/>
+        <text class="lbl" x="77" y="200" text-anchor="middle">CMT</text>
+        <text class="rd" data-k="cmt1_level_pct" x="77" y="143" text-anchor="middle">--</text>
+        <rect id="prhr" class="node" x="60" y="250" width="34" height="34" rx="4"/>
+        <text class="lbl" x="77" y="300" text-anchor="middle">PRHR</text>
+        <text class="rd" data-k="prhr_flow_pct" x="77" y="243" text-anchor="middle">--</text>
+        <rect id="accum" class="node" x="60" y="350" width="34" height="34" rx="4"/>
+        <text class="lbl" x="77" y="400" text-anchor="middle">ACUM</text>
+        <text class="rd" data-k="accum_press_bar" x="77" y="343" text-anchor="middle">--</text>
+        <rect id="ads" class="node" x="115" y="250" width="34" height="34" rx="4"/>
+        <text class="lbl" x="132" y="243" text-anchor="middle">ADS</text>
+        <text class="rd" data-k="ads_stage" x="132" y="272" text-anchor="middle">--</text>
+      </g>
+
+      <!-- contenção: pressão/radiação -->
+      <text class="lbl" x="500" y="52" text-anchor="end">Contenção</text>
+      <text class="rd" data-k="containment_press_bar" x="500" y="70" text-anchor="end">--</text>
+      <text class="rd" data-k="containment_rad_msvh" x="500" y="88" text-anchor="end">--</text>
+    </svg>
+
+    <!-- tendências -->
+    <div style="margin-top:12px">
+      <canvas class="spark" id="spark"></canvas>
+      <div class="legend">
+        <span style="color:var(--ok)">Potência reator (%)</span>
+        <span style="color:var(--accent)">Geração (MWe/12)</span>
+        <span style="color:var(--hot)">Tavg (°C)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================ LATERAL ============================ -->
+  <div class="col-side">
+    <div class="card">
+      <h3>Alarmes & status</h3>
+      <div class="alarms" id="alarms"></div>
+    </div>
+    <div class="card">
+      <h3>Controle do operador</h3>
+      <div id="controls"></div>
+    </div>
+    <div class="card">
+      <h3>Leituras por sistema</h3>
+      <div class="tabs" id="tabs"></div>
+      <div class="readings-grid" id="readings"></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  OpenNPP — ambiente SIMULADO para treino de segurança de OT/ICS. Nenhuma planta física real é controlada.
+  Comandos da HMI escrevem nos mesmos registradores Modbus expostos na rede OT (porta 502).
+</footer>
+
+<script src="/app.js"></script>
+</body>
+</html>

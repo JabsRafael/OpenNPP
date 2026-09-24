@@ -1,57 +1,80 @@
-version: '3.8'
-services: 
-    database:
-        container_name: mysql
-        image: mysql/mysql-server:5.7
-        ports:
-            - "3306:3306"
-        environment: 
-            - MYSQL_ROOT_PASSWORD=root
-            - MYSQL_USER=root
-            - MYSQL_PASSWORD=root
-            - MYSQL_DATABASE=scadalts
-        expose: ["3306"]
-        volumes:
-            - ./docker/volumes/databases:/home/
-        healthcheck:
-            test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-            interval: 10s
-            timeout: 5s
-            retries: 5
-        networks:
-            - default
+# OpenNPP — Cyber range de OT/ICS: simulador de usina nuclear (AP1000-like)
+# Ambiente 100% SIMULADO para treino de seguranca de OT. Nenhuma planta real.
+#
+# Mapeamento Purdue (logico) na rede 172.28.10.0/24:
+#   Nivel 1 (controle) : simulator (Modbus 502), openplc
+#   Nivel 2 (supervisao): scadalts, HMI web do simulator
+#   Nivel 3 (dados)    : database (historiador/backend do ScadaLTS)
+services:
+  # -------------------------------------------------- planta (processo fisico)
+  simulator:
+    build:
+      context: ./simulator
+      dockerfile: Dockerfile
+    container_name: npp-simulator
+    ports:
+      - "5000:5000"     # HMI web + API   -> http://localhost:5000
+      - "5020:502"      # Modbus TCP (rede OT) exposto p/ ferramentas no host
+    environment:
+      - MODBUS_PORT=502
+      - API_PORT=5000
+    networks:
+      opennpp:
+        ipv4_address: 172.28.10.10
 
-    scadalts:
-        image: scadalts/scadalts:latest
-        ports: 
-            - "8080:8080"
-        depends_on: 
-            database:
-                condition: service_healthy
-        expose: ["8080", "8000"]
-        links:
-            - database:database
-        networks:
-            - default
+  # -------------------------------------------------- CLP de controle (OpenPLC)
+  openplc:
+    build:
+      context: ./OpenPLC
+      dockerfile: Dockerfile
+    container_name: npp-openplc
+    ports:
+      - "8082:8081"     # web de configuracao do OpenPLC
+      - "5021:502"      # servidor Modbus do proprio OpenPLC
+    privileged: true
+    depends_on:
+      - simulator
+    networks:
+      opennpp:
+        ipv4_address: 172.28.10.20
 
-    openplc:
-        build:
-          context: ./OpenPLC
-          dockerfile: Dockerfile
-        ports: 
-            - "8082:8081"
-        expose: ["8082"]
-        links:
-            - database:database
-        privileged: true
-        networks:
-            - default
+  # -------------------------------------------------- SCADA / HMI (ScadaLTS)
+  scadalts:
+    image: scadalts/scadalts:latest
+    container_name: npp-scadalts
+    ports:
+      - "8080:8080"
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      opennpp:
+        ipv4_address: 172.28.10.30
+
+  # -------------------------------------------------- backend do ScadaLTS
+  database:
+    container_name: npp-mysql
+    image: mysql/mysql-server:5.7
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=root
+      - MYSQL_DATABASE=scadalts
+    volumes:
+      - ./docker/volumes/databases:/home/
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      opennpp:
+        ipv4_address: 172.28.10.40
 
 networks:
-  default:
-    name: global_infra
-    external: true
+  opennpp:
+    name: opennpp_net
     driver: bridge
     ipam:
       config:
-        - subnet: 172.28.0.0/16
+        - subnet: 172.28.10.0/24
