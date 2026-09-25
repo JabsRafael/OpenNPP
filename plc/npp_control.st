@@ -43,6 +43,7 @@ PROGRAM npp_control
     co_heater    AT %QX100.7 : BOOL; (* cmd_przr_heater *)
     co_spray     AT %QX101.0 : BOOL; (* cmd_przr_spray *)
     co_auto      AT %QX101.2 : BOOL; (* cmd_auto_control (forcamos 0) *)
+    co_przr_man  AT %QX102.3 : BOOL; (* cmd_przr_press_manual (forcamos 1: o CLP comanda aquecedor/spray) *)
 
     (* ---- Setpoints internos do CLP ---- *)
     sp_power   : REAL := 100.0;   (* % potencia desejada *)
@@ -59,6 +60,7 @@ PROGRAM npp_control
 
   (* Assume o controle: tira o simulador do automatico interno *)
   co_auto := FALSE;
+  co_przr_man := TRUE;   (* pressao do PZR tem estacao A/M propria no simulador *)
 
   (* ---- Escala bruta -> engenharia ---- *)
   power := INT_TO_REAL(ir_power) / 10.0;

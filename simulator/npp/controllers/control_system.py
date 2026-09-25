@@ -1,7 +1,7 @@
 """
 Sistema de Controle da planta — agrega os controladores individuais.
 
-Espelha a organizacao real: controle de barras (potencia), pressurizador,
+Espelha a organizacao real: controle de barras (programa de Tavg), pressurizador,
 turbina e DUAS malhas de nivel de gerador de vapor (uma por GV). Quando o modo
 automatico esta ativo, produz as demandas de atuador. Em modo manual/PLC, este
 bloco fica inativo e as demandas vem dos holding registers (operador ou OpenPLC).
@@ -17,6 +17,7 @@ from .turbine_control import TurbineControl
 class ControlSystem:
     def __init__(self):
         self.rod = RodControl(C.ROD_POS_REF)
+        self.tref = C.COOLANT_TEMP_REF
         self.pzr = PressurizerControl()
         self.turbine = TurbineControl()
         # DUAS malhas de nivel independentes (GV1 e GV2)
@@ -27,10 +28,13 @@ class ControlSystem:
 
     def update(self, plant, sp, dt):
         power = plant.core.n * 100.0
-        rod_demand = self.rod.update(power, sp["sp_power_pct"], dt,
+        load = plant.turbine.load_frac * 100.0
+        turbine_valve = self.turbine.update(sp["sp_power_pct"], load, dt)   # carga em rampa
+        tref = C.T_NOLOAD + (C.COOLANT_TEMP_REF - C.T_NOLOAD) * max(0.0, min(1.0, load / 100.0))
+        self.tref = tref
+        rod_demand = self.rod.update(plant.primary.T_coolant, tref, power, load, dt,
                                      tripped=plant.bus.tripped, current_rod=plant.core.rod_pos,
                                      period=plant.reactor_period)
-        turbine_valve = self.turbine.update(power, dt)   # turbina segue a potencia real
         heater, spray = self.pzr.update(plant.primary.przr_press, sp["sp_przr_pressure_bar"])
 
         fv1 = self.sg_level[0].update(plant.sg[0].level, plant.sg[0].steam_flow,

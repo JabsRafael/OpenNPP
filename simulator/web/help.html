@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenNPP — Manual do operador</title>
+<link rel="stylesheet" href="/style.css">
+<style>
+  .manual { max-width: 1100px; margin: 0 auto; padding: 16px 20px 40px; }
+  .manual h2 { font-size: 16px; color: var(--accent); margin: 26px 0 8px; border-bottom: 1px solid var(--edge); padding-bottom: 4px; }
+  .manual h3 { font-size: 13px; color: var(--ink); margin: 16px 0 6px; }
+  .manual p, .manual li { color: #c9d1d9; line-height: 1.55; }
+  .manual table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; font-size: 12.5px; }
+  .manual th, .manual td { text-align: left; vertical-align: top; padding: 5px 8px; border-bottom: 1px solid var(--edge); }
+  .manual th { color: var(--muted); font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: .4px; }
+  .manual td:first-child { white-space: nowrap; font-weight: 700; color: var(--ink); }
+  .manual code { background: var(--panel2); padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+  .toc { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; }
+  .toc a { color: var(--accent); text-decoration: none; background: var(--panel2); border: 1px solid var(--edge);
+    padding: 3px 9px; border-radius: 4px; font-size: 12px; }
+  .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 6px; }
+  ol li { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">OpenNPP <small>Manual do operador · significados e procedimentos</small></div>
+  <a class="btn" href="/" style="margin-left:auto;text-decoration:none">← Voltar à sala de controle</a>
+</header>
+
+<div class="manual">
+  <div class="toc">
+    <a href="#cores">Cores</a><a href="#paineis">Painéis</a><a href="#perm">Permissivos (P-x / C-x)</a>
+    <a href="#trips">Trips do reator</a><a href="#esfas">Salvaguardas</a><a href="#nis">Instrumentação nuclear</a>
+    <a href="#reat">Reatividade</a><a href="#siglas">Siglas</a><a href="#partida">Partida / repartida</a>
+  </div>
+
+  <h2 id="cores">Cores do painel</h2>
+  <table>
+    <tr><th>Cor</th><th>Significado</th></tr>
+    <tr><td><span class="sw" style="background:#da3633"></span>Vermelho</td><td>Algo <b>desarmado</b>: reator em SCRAM, turbina desarmada, contenção em nível de trip.</td></tr>
+    <tr><td><span class="sw" style="background:#d29922"></span>Âmbar</td><td>Alarme, salvaguarda atuando ou condição anormal: pressão alta/baixa, nível baixo, CMT, ADS, PRHR, isolamento da alimentação, salvaguardas bloqueadas (bypass).</td></tr>
+    <tr><td><span class="sw" style="background:#e6edf3"></span>Branco</td><td>Estado normal: equipamento ligado, permissivo presente, <b>trips de partida bloqueados</b> (em potência é o normal).</td></tr>
+    <tr><td>Tracejado</td><td>Comandado mas <b>sem efeito</b> (ex.: bomba de alimentação ligada com as válvulas fechadas ou com isolamento ativo).</td></tr>
+    <tr><td>⊘</td><td>Indisponível agora (falta o permissivo, ou a estação está em AUTO).</td></tr>
+  </table>
+
+  <h2 id="paineis">Painéis e botões</h2>
+  <table>
+    <tr><th>Controle</th><th>O que é</th></tr>
+    <tr><td>Modo (mestre) MANUAL / AUTOMÁTICO</td><td>AUTO: a turbina vai em rampa (5%/min) até o <b>setpoint de carga</b>, as barras seguem o programa de Tavg (Tref) e o nível dos GVs é automático. MANUAL: você comanda barras, turbina e válvulas de alimentação. Todo trip volta para MANUAL.</td></tr>
+    <tr><td>Estações AUTO / MAN</td><td>Cada subsistema tem a sua, como na sala real: <b>pressão do PZR</b>, <b>nível do PZR (CVS)</b>, <b>despejo de vapor</b> e <b>SFW</b>. Em AUTO, o valor exibido na demanda é a saída real do controlador; ao passar para MAN nada salta.</td></tr>
+    <tr><td>Botoeira (pulso)</td><td>SCRAM, desarme da turbina e bloqueios de trip. O clique envia um pulso e a lâmpada mostra o <b>estado real</b> (reator desarmado, turbina desarmada, trip bloqueado).</td></tr>
+    <tr><td>Liga/desliga</td><td>Bombas, aquecedores, spray, boração/diluição, salvaguardas manuais. A lâmpada mostra o estado real do equipamento.</td></tr>
+    <tr><td>Bloqueios de trip de partida</td><td>A faixa-fonte (1e5 cps) e IR/PR-baixo (25%) são trips que <b>só servem na partida</b>. Na subida de potência o operador os <b>bloqueia</b> quando o permissivo acende (P-6, P-10). O botão mostra <i>EM SERVIÇO</i> ou <i>BLOQUEADO</i>. <b>Em potência, ambos BLOQUEADOS é o normal</b>, e o botão fica travado (⊘), porque tirar o bloqueio desarmaria o reator. Quando a potência cai abaixo do permissivo eles voltam a serviço sozinhos.</td></tr>
+    <tr><td>Barras ▼ INSERIR / ▲ RETIRAR</td><td>Alavanca IN-HOLD-OUT: <b>segure</b> para mover o banco (48 passos/min), solte para parar. ±5p = ajuste fino. Banco com 228 passos (0 = todo inserido).</td></tr>
+    <tr><td>−/+ nos setpoints</td><td>Passo fino e grosso; segurar repete.</td></tr>
+    <tr><td>Pressão do PZR</td><td>Sobe com os <b>aquecedores</b> (lentos, ~0,3 bar/s; cortam com nível &lt; 17%) e cai com o <b>spray</b> (rápido). Também sobe e desce com o nível (a bolha de vapor é comprimida ou expandida).</td></tr>
+    <tr><td>Nível do PZR</td><td>Controlado pelo <b>CVS</b>: carga (+) sobe o nível, descarga (−) desce; capacidade de ±20 kg/s. Também varia com a temperatura (expansão térmica, ~1,3%/K). Em AUTO segue o programa: 25% sem carga até 55% a 100%.</td></tr>
+    <tr><td>Boro</td><td>Borar (ácido bórico, 4000 ppm) ou Diluir (água pura). A variação é exponencial e lenta: ~30 min para ir de 1900 a 900 ppm.</td></tr>
+  </table>
+
+  <h2 id="perm">Permissivos e intertravamentos</h2>
+  <p>Sinais lógicos da proteção (padrão Westinghouse) que <b>permitem</b> ou <b>bloqueiam</b> automaticamente certas funções conforme a condição da planta.</p>
+  <table>
+    <tr><th>Sinal</th><th>Condição</th><th>Efeito</th></tr>
+    <tr><td>P-4</td><td>Reator desarmado</td><td>Com Tavg &lt; 296 °C: <b>isola a alimentação principal</b> (a SFW assume). Limpa no rearme.</td></tr>
+    <tr><td>P-6</td><td>Faixa intermediária &gt; 1e-10 A</td><td><b>Permite bloquear</b> o trip da faixa-fonte. Bloqueie antes de 1e5 cps, senão o reator desarma. Abaixo de P-6 o trip volta a serviço sozinho.</td></tr>
+    <tr><td>P-7</td><td>Potência &lt; 10% <b>e</b> carga da turbina &lt; 10%</td><td>Baixa potência: <b>bloqueia sozinho</b> os trips de pressão baixa do PZR, nível alto do PZR e vazão baixa (normais durante partida e parada).</td></tr>
+    <tr><td>P-10</td><td>Potência &gt; 10%</td><td><b>Permite bloquear</b> os trips de IR e PR-baixo (25%); bloqueie antes de 25%. Bloqueia <b>automaticamente</b> a faixa-fonte (não pode voltar a serviço acima de P-10). Abaixo de P-10 os trips voltam a serviço.</td></tr>
+    <tr><td>P-11</td><td>Pressão do PZR ≥ 130 bar</td><td><b>Arma</b> a injeção de segurança por pressão baixa e abre o isolamento dos acumuladores. A frio fica desarmado para não atuar à toa.</td></tr>
+    <tr><td>P-14</td><td>Nível de algum GV ≥ 80%</td><td>Isola a alimentação principal e <b>desarma a turbina</b> (proteção contra arraste de água).</td></tr>
+    <tr><td>C-1</td><td>IR alta (≥ 20%) sem o bloqueio de P-10</td><td><b>Bloqueia a retirada</b> de barras (não desarma).</td></tr>
+    <tr><td>C-2</td><td>Potência ≥ 103%</td><td><b>Bloqueia a retirada</b> de barras.</td></tr>
+    <tr><td>C-5</td><td>Carga da turbina &lt; 15%</td><td>Em AUTO as barras <b>não retiram sozinhas</b>. A partida é manual; o AUTO só assume com a turbina carregada.</td></tr>
+  </table>
+
+  <h2 id="trips">Trips do reator (RPS)</h2>
+  <p>Qualquer condição abaixo desarma o reator. O <b>rearme</b> só passa quando nenhuma delas está presente; o motivo aparece no painel, no registro de eventos e no console (F12).</p>
+  <table>
+    <tr><th>Trip</th><th>Setpoint</th><th>Observação</th></tr>
+    <tr><td>Faixa de potência alta</td><td>109%</td><td>sempre ativo</td></tr>
+    <tr><td>Faixa de potência baixa</td><td>25%</td><td>bloqueável acima de P-10</td></tr>
+    <tr><td>Faixa intermediária</td><td>25% equiv.</td><td>bloqueável acima de P-10</td></tr>
+    <tr><td>Faixa-fonte</td><td>1e5 cps</td><td>bloqueável acima de P-6; bloqueado automaticamente acima de P-10</td></tr>
+    <tr><td>Taxa positiva de fluxo</td><td>+5 pontos em 2 s</td><td>subida muito rápida</td></tr>
+    <tr><td>Pressão do PZR alta</td><td>168 bar</td><td>—</td></tr>
+    <tr><td>Pressão do PZR baixa</td><td>128 bar</td><td>bloqueado abaixo de P-7</td></tr>
+    <tr><td>Nível do PZR alto</td><td>92%</td><td>bloqueado abaixo de P-7</td></tr>
+    <tr><td>Vazão do primário baixa</td><td>87%</td><td>bloqueado abaixo de P-7 (perder 1 RCP em potência desarma)</td></tr>
+    <tr><td>Nível baixo de GV</td><td>20%</td><td>qualquer GV</td></tr>
+    <tr><td>Sobretemperatura do combustível</td><td>1400 °C</td><td>substitui OTΔT/OPΔT</td></tr>
+    <tr><td>Pressão alta da contenção</td><td>3,5 bar</td><td>—</td></tr>
+    <tr><td>Sinal S (injeção de segurança)</td><td>—</td><td>toda SI desarma o reator</td></tr>
+    <tr><td>SCRAM manual</td><td>—</td><td>botoeira</td></tr>
+  </table>
+
+  <h2 id="esfas">Salvaguardas passivas (ESFAS / PXS)</h2>
+  <table>
+    <tr><th>Sistema</th><th>O que faz</th></tr>
+    <tr><td>Sinal S</td><td>Pressão do PZR ≤ 120 bar (com P-11), contenção ≥ 2,5 bar ou SI manual. Aciona CMT e PRHR e desarma o reator.</td></tr>
+    <tr><td>CMT</td><td>Core Makeup Tanks (2×70 t): injetam água borada (3400 ppm) por gravidade, ~60 kg/s.</td></tr>
+    <tr><td>Acumuladores</td><td>2×57 t pressurizados com N₂ a 48 bar: injeção rápida quando o RCS cai abaixo da pressão deles.</td></tr>
+    <tr><td>PRHR</td><td>Trocador passivo que leva o calor residual do primário para o IRWST.</td></tr>
+    <tr><td>ADS</td><td>Despressurização em 4 estágios: ADS-1 com CMT &lt; 67,5%, ADS-2 e ADS-3 temporizados, ADS-4 com CMT &lt; 20%.</td></tr>
+    <tr><td>IRWST</td><td>Tanque de ~2000 t dentro da contenção; injeta por gravidade com o RCS despressurizado (ADS-4).</td></tr>
+    <tr><td>Bloquear salvaguardas</td><td>Bypass de manutenção que desliga tudo acima. Em operação nunca deveria estar ativo; é o alvo dos exercícios de ataque.</td></tr>
+  </table>
+
+  <h2 id="nis">Instrumentação nuclear</h2>
+  <table>
+    <tr><th>Leitura</th><th>Significado</th></tr>
+    <tr><td>SR — faixa-fonte</td><td>Contagens/s do detector de partida (desligado ~20–30 cps). Mostra a aproximação da criticalidade.</td></tr>
+    <tr><td>IR — faixa intermediária</td><td>Corrente da câmara, de 1e-11 a 1e-3 A. P-6 em 1e-10 A.</td></tr>
+    <tr><td>PR — faixa de potência</td><td>Fluxo de nêutrons em % da nominal.</td></tr>
+    <tr><td>Potência térmica</td><td>Fissão + calor de decaimento (o que o primário recebe).</td></tr>
+    <tr><td>SUR</td><td>Startup rate em décadas por minuto (26/período). Na partida, mantenha ≤ 1 dpm.</td></tr>
+    <tr><td>Período</td><td>Tempo para a potência crescer e vezes. Positivo curto = subindo rápido.</td></tr>
+  </table>
+
+  <h2 id="reat">Reatividade (pcm = 10⁻⁵ Δk/k)</h2>
+  <table>
+    <tr><th>Termo</th><th>Comportamento</th></tr>
+    <tr><td>Barras</td><td>Curva S: pouco efeito nas pontas, máximo no meio do núcleo. Valor total ~6000 pcm.</td></tr>
+    <tr><td>Doppler</td><td>Combustível mais quente → menos reatividade (freio imediato da potência).</td></tr>
+    <tr><td>Moderador / MTC</td><td>Refrigerante mais quente → menos reatividade (~−20 pcm/°C a plena carga). Perto de zero a frio; pode ficar <b>positivo</b> com boro alto.</td></tr>
+    <tr><td>Boro</td><td>~−10 pcm/ppm a quente, ~−12 a frio.</td></tr>
+    <tr><td>Xenônio / Samário</td><td>Venenos de fissão. Após um trip o Xe sobe por ~9–11 h e dificulta a repartida.</td></tr>
+    <tr><td>ECP</td><td>Posição crítica estimada: em parada quente com 880 ppm, ~150 passos.</td></tr>
+    <tr><td>Ponto de adição de calor</td><td>~1% de potência: a partir daí o combustível esquenta e o Doppler freia a subida.</td></tr>
+  </table>
+
+  <h2 id="siglas">Siglas</h2>
+  <table>
+    <tr><th>Sigla</th><th>Significado</th></tr>
+    <tr><td>RCS</td><td>Sistema de refrigeração do reator (primário)</td></tr>
+    <tr><td>RCP</td><td>Bomba de refrigerante do reator (4 no AP1000)</td></tr>
+    <tr><td>PZR</td><td>Pressurizador</td></tr>
+    <tr><td>PORV</td><td>Válvula de alívio do PZR (172 bar)</td></tr>
+    <tr><td>CVS</td><td>Sistema de controle químico e volumétrico (carga/descarga, boro)</td></tr>
+    <tr><td>GV / SG</td><td>Gerador de vapor</td></tr>
+    <tr><td>SFW</td><td>Alimentação de partida dos GVs (~6% de capacidade)</td></tr>
+    <tr><td>Despejo de vapor</td><td>Steam dump: manda vapor direto ao condensador (40%). Segura o Tavg quando a turbina está fora.</td></tr>
+    <tr><td>Tavg / Thot / Tcold</td><td>Temperatura média, do ramo quente e do ramo frio do primário</td></tr>
+    <tr><td>Tref</td><td>Tavg programado: 292 °C sem carga até 305 °C a 100% de carga</td></tr>
+    <tr><td>RPS / ESFAS</td><td>Sistema de proteção do reator / atuação das salvaguardas</td></tr>
+    <tr><td>LOCA</td><td>Perda de refrigerante (ruptura no primário)</td></tr>
+    <tr><td>HZP / HFP</td><td>Potência zero a quente / plena potência a quente</td></tr>
+  </table>
+
+  <h2 id="partida">Partida e repartida (MANUAL)</h2>
+  <ol>
+    <li><b>A frio:</b> ligar as 4 RCPs e manter a pressão do PZR em AUTO (ou usar os aquecedores em MAN). O calor das bombas aquece ~40 °C/h (~6 h; use a velocidade da simulação 5–10×). Com 292 °C o despejo de vapor segura o Tavg.</li>
+    <li><b>Rearmar:</b> só passa sem condição de trip presente; o painel diz o que falta.</li>
+    <li><b>A frio:</b> diluir o boro até ~900 ppm.</li>
+    <li><b>Retirar barras</b> segurando ▲ RETIRAR, com SUR ≤ 1 dpm. Crítico perto da ECP. Depois de um trip, o Xe vai tirando reatividade: compense.</li>
+    <li><b>P-6</b> aceso: clicar em <i>Bloq. trip faixa-fonte</i> antes de 1e5 cps.</li>
+    <li>~1%: ponto de adição de calor. ~3–5%: ligar a <b>bomba de alimentação principal</b> e abrir as válvulas (a SFW só dá ~6%).</li>
+    <li><b>P-10</b> aceso (&gt; 10%): clicar em <i>Bloq. trips IR/PR-baixo</i> antes de 25%.</li>
+    <li>Abrir a turbina e, com carga ≥ 15% (C-5), passar o modo mestre para <b>AUTOMÁTICO</b> e subir o setpoint de carga.</li>
+  </ol>
+</div>
+</body>
+</html>

@@ -16,6 +16,7 @@
   <div class="stat"><span class="v" id="s-przr">--</span><span class="k">Pressão RCS</span></div>
   <div class="stat"><span class="v" id="s-clock">--</span><span class="k">Tempo reator</span></div>
   <div class="stat"><span class="v" id="s-speed">1×</span><span class="k">Escala tempo</span></div>
+  <a class="btn help-link" href="/help" target="_blank" rel="noopener" title="Manual: permissivos (P-4, P-6, P-7, P-10...), trips, siglas, cores e procedimento">📖 Manual</a>
   <div class="status-badge" id="s-status">NORMAL</div>
 </header>
 
@@ -117,16 +118,30 @@
 
   <div class="situation-side">
     <div class="card">
-      <h3>Núcleo &amp; reatividade</h3>
+      <h3>Núcleo &amp; instrumentação nuclear</h3>
       <div class="readings-grid">
+        <div class="rk" title="Faixa-fonte (SR): contagens por segundo. Trip em 1e5 cps se não bloqueado acima de P-6.">Faixa-fonte (SR)</div><div class="rv" id="r-sr">--</div>
+        <div class="rk" title="Faixa intermediária (IR): corrente da câmara. P-6 em 1e-10 A.">Faixa intermediária (IR)</div><div class="rv" id="r-ir">--</div>
+        <div class="rk" title="Faixa de potência (PR): fluxo de nêutrons em % da nominal.">Faixa de potência (PR)</div><div class="rv" data-r="neutron_flux_pct">--</div>
+        <div class="rk" title="Potência térmica (calorimétrica) = fissão + calor de decaimento.">Potência térmica</div><div class="rv" data-r="thermal_power_pct">--</div>
+        <div class="rk">Calor de decaimento</div><div class="rv" data-r="decay_heat_pct">--</div>
+        <div class="rk" title="Startup rate: décadas por minuto. Na partida, mantenha ≤ 1 dpm.">Taxa de partida (SUR)</div><div class="rv" id="r-sur">--</div>
         <div class="rk">Período do reator</div><div class="rv" data-r="reactor_period_s">--</div>
-        <div class="rk">Reatividade total</div><div class="rv" data-r="reactivity_pcm">--</div>
-        <div class="rk">Reativ. Xenônio</div><div class="rv" data-r="xenon_worth_pcm">--</div>
+        <div class="rk">Barras (retirada)</div><div class="rv" id="r-rods">--</div>
+      </div>
+      <h4 class="sub">Reatividade</h4>
+      <div class="readings-grid">
+        <div class="rk">Total</div><div class="rv" data-r="reactivity_pcm">--</div>
+        <div class="rk" title="Valor integral do banco de controle (curva S).">Barras</div><div class="rv" data-r="rod_worth_pcm">--</div>
+        <div class="rk" title="Doppler ~ raiz quadrada da temperatura do combustível.">Doppler</div><div class="rv" data-r="doppler_worth_pcm">--</div>
+        <div class="rk" title="Moderador: integral do MTC desde 305 °C.">Moderador</div><div class="rv" data-r="moderator_worth_pcm">--</div>
+        <div class="rk" title="Coeficiente de temperatura do moderador. Fica menos negativo a frio e com boro alto (pode ficar positivo).">MTC</div><div class="rv" data-r="mtc_pcm_per_c">--</div>
+        <div class="rk">Boro</div><div class="rv" data-r="boron_worth_pcm">--</div>
+        <div class="rk">Xenônio</div><div class="rv" data-r="xenon_worth_pcm">--</div>
         <div class="rk">Xe-135 / I-135</div><div class="rv" id="r-xei">--</div>
-        <div class="rk">Reativ. Samário</div><div class="rv" data-r="samarium_worth_pcm">--</div>
+        <div class="rk">Samário</div><div class="rv" data-r="samarium_worth_pcm">--</div>
         <div class="rk">Veneno queimável</div><div class="rv" data-r="burnable_poison_pct">--</div>
         <div class="rk">Burnup do ciclo</div><div class="rv" data-r="burnup_pct">--</div>
-        <div class="rk">Barras (retirada)</div><div class="rv" data-r="rod_position_pct">--</div>
       </div>
     </div>
     <div class="card">
@@ -166,30 +181,25 @@
   <div class="card panel-sim">
     <h3>■ Simulação &amp; Malfunções</h3>
     <div class="ctl-group">
-      <h4 title="'Operando 100%' já vem em AUTOMÁTICO (planta em potência).&#10;Os cenários de partida (parada quente, frio, 1ª partida) iniciam em MANUAL — e ao tripar, sempre cai para MANUAL.&#10;Nada é facilitado: partida a frio exige ligar bombas + aquecedor, pressurizar e aquecer (~90 min, ou acelere o tempo), rearmar, diluir o boro e retirar barras devagar olhando o Período.">Cenário inicial (recarrega a planta) &#9432;</h4>
+      <h4 title="'Operando 100%' já vem em AUTOMÁTICO (planta em potência).&#10;Os cenários de partida (parada quente, frio, 1ª partida) iniciam em MANUAL — e ao tripar, sempre cai para MANUAL.&#10;Nada é facilitado: partida a frio exige ligar as 4 RCPs + aquecedor, pressurizar e aquecer com o calor das bombas (~40 °C/h, ~6 h — use a velocidade da simulação), rearmar, diluir o boro (~30 min) e retirar barras devagar olhando a SUR.">Cenário inicial (recarrega a planta) &#9432;</h4>
       <div class="coils" id="scenario-btns"></div>
     </div>
     <div class="ctl-group">
-      <h4>Repartida do reator (após SCRAM)</h4>
-      <div class="coils"><button class="btn" onclick="restart()" title="Ao tripar, o controle vai para MANUAL — repartida na mão.&#10;1) Rearmar (desliga SCRAM + reset do trip).&#10;2) Ligar o aquecedor do PZR (segura a pressão).&#10;3) Manter a válvula da turbina baixa (senão super-resfria e a pressão cai).&#10;4) Retirar as barras DEVAGAR olhando o Período — se ficar curto (<25 s), pare.&#10;Reabilite o AUTO só quando estável.">▶ Rearmar reator (reset do trip) &#9432;</button></div>
+      <h4 title="Ao tripar, o controle vai para MANUAL — repartida na mão.&#10;1) Rearmar: só passa sem condição de trip presente (o motivo aparece abaixo e no console, F12).&#10;2) Aquecedor do PZR para segurar a pressão; turbina fechada (o despejo de vapor segura o Tavg).&#10;3) Retirar barras DEVAGAR olhando a SUR (≤ 1 dpm) — o Xe-135 pós-trip vai tirando reatividade.&#10;4) Acima de P-6 (IR > 1e-10 A): bloquear o trip da faixa-fonte antes de 1e5 cps.&#10;5) ~3-5%: ligar a bomba de alimentação principal (a SFW só dá ~6%).&#10;6) Acima de P-10 (10%): bloquear os trips de IR/PR-baixo antes de 25%.&#10;7) AUTO só com a turbina carregada (C-5: ≥ 15%).">Repartida do reator (após SCRAM) &#9432;</h4>
+      <div class="coils"><button class="btn" id="btn-reset" onclick="restart()">▶ Rearmar reator (reset do trip)</button></div>
+      <div class="reset-msg" id="reset-msg"></div>
     </div>
     <div class="ctl-group">
-      <h4 title="Acelera a evolução de venenos/burnup. Xe-135 entra em ~9–11 h — acelere para observar o pico e o 'poço de iodo'.">Escala de tempo &#9432;</h4>
+      <h4 title="Acelera a planta INTEIRA (física completa). Útil no aquecimento a frio (~6 h reais a 40 °C/h).">Velocidade da simulação &#9432;</h4>
+      <div class="coils" id="speed-btns"></div>
+    </div>
+    <div class="ctl-group">
+      <h4 title="Acelera SÓ a evolução de venenos/burnup. Xe-135 entra em ~9–11 h — acelere para observar o pico e o 'poço de iodo'.">Escala de tempo dos venenos &#9432;</h4>
       <div class="coils" id="timescale-btns"></div>
     </div>
     <div class="ctl-group">
-      <h4 title="Com salvaguardas: CMT/ADS/IRWST mitigam. Com bloqueio de salvaguardas: o núcleo descobre e superaquece.">LOCA — rompimento no primário &#9432;</h4>
-      <div class="slider">
-        <label>Área de rompimento</label>
-        <input type="range" id="loca-range" min="0" max="100" step="5" value="0">
-        <span class="num" id="loca-val">0 %</span>
-      </div>
-      <div class="coils">
-        <button class="btn" onclick="setLoca(0)">Sem LOCA</button>
-        <button class="btn danger" onclick="setLoca(25)">Pequeno</button>
-        <button class="btn danger" onclick="setLoca(60)">Médio</button>
-        <button class="btn danger" onclick="setLoca(100)">Grande</button>
-      </div>
+      <h4 title="Área da ruptura em % de uma guilhotina dupla (100% = ~12 t/s a 155 bar).&#10;Com salvaguardas: CMT → ADS → acumuladores → IRWST mitigam. Com bloqueio de salvaguardas: o núcleo seca e superaquece.">LOCA — rompimento no primário &#9432;</h4>
+      <div class="coils" id="loca-btns"></div>
     </div>
   </div>
 </section>

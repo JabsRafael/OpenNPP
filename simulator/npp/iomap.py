@@ -39,26 +39,26 @@ INPUT_REGISTERS = [
     # -- nucleo (reator)
     Point(0,  "reactor_power_pct", "Potencia do reator",      "%",    10.0, hi=120, system="nucleo"),
     Point(1,  "neutron_flux_pct",  "Fluxo de neutrons",       "%",    10.0, hi=120, system="nucleo"),
-    Point(2,  "fuel_temp_c",       "Temp. combustivel",       "degC",  1.0, hi=2200, system="nucleo"),
+    Point(2,  "fuel_temp_c",       "Temp. combustivel",       "°C",  1.0, hi=2200, system="nucleo"),
     Point(3,  "reactivity_pcm",    "Reatividade total",       "pcm",   1.0, signed=True, lo=-2000, hi=1000, system="nucleo"),
     Point(4,  "decay_heat_pct",    "Calor de decaimento",     "%",    10.0, hi=10, system="nucleo"),
     Point(5,  "rod_position_pct",  "Posicao barras (retirada)","%",   10.0, hi=100, system="nucleo"),
     # -- primario
-    Point(6,  "coolant_tavg_c",    "Temp. media (Tavg)",      "degC", 10.0, lo=250, hi=340, system="primario"),
-    Point(7,  "coolant_thot_c",    "Temp. ramo quente",       "degC", 10.0, lo=250, hi=360, system="primario"),
-    Point(8,  "coolant_tcold_c",   "Temp. ramo frio",         "degC", 10.0, lo=250, hi=340, system="primario"),
-    Point(9,  "core_dt_c",         "Delta-T do nucleo",       "degC", 10.0, hi=60, system="primario"),
+    Point(6,  "coolant_tavg_c",    "Temp. media (Tavg)",      "°C", 10.0, lo=0, hi=340, system="primario"),
+    Point(7,  "coolant_thot_c",    "Temp. ramo quente",       "°C", 10.0, lo=250, hi=360, system="primario"),
+    Point(8,  "coolant_tcold_c",   "Temp. ramo frio",         "°C", 10.0, lo=250, hi=340, system="primario"),
+    Point(9,  "core_dt_c",         "Delta-T do nucleo",       "°C", 10.0, hi=60, system="primario"),
     Point(10, "rcp_flow_pct",      "Vazao primaria total",    "%",    10.0, hi=110, system="primario"),
-    Point(11, "przr_pressure_bar", "Pressao pressurizador",   "bar",  10.0, lo=100, hi=180, system="primario"),
+    Point(11, "przr_pressure_bar", "Pressao pressurizador",   "bar",  10.0, lo=0, hi=180, system="primario"),
     Point(12, "przr_level_pct",    "Nivel pressurizador",     "%",    10.0, hi=100, system="primario"),
     Point(13, "boron_ppm",         "Concentracao de boro",    "ppm",   1.0, hi=3500, system="primario"),
     # -- gerador de vapor 1
-    Point(14, "sg1_pressure_bar",  "GV1 pressao",             "bar",  10.0, lo=40, hi=90, system="gv1"),
+    Point(14, "sg1_pressure_bar",  "GV1 pressao",             "bar",  10.0, lo=0, hi=90, system="gv1"),
     Point(15, "sg1_level_pct",     "GV1 nivel",               "%",    10.0, hi=100, system="gv1"),
     Point(16, "sg1_steam_flow_kgs","GV1 vazao vapor",         "kg/s",  1.0, hi=1200, system="gv1"),
     Point(17, "sg1_feed_flow_kgs", "GV1 vazao alim.",         "kg/s",  1.0, hi=1200, system="gv1"),
     # -- gerador de vapor 2
-    Point(18, "sg2_pressure_bar",  "GV2 pressao",             "bar",  10.0, lo=40, hi=90, system="gv2"),
+    Point(18, "sg2_pressure_bar",  "GV2 pressao",             "bar",  10.0, lo=0, hi=90, system="gv2"),
     Point(19, "sg2_level_pct",     "GV2 nivel",               "%",    10.0, hi=100, system="gv2"),
     Point(20, "sg2_steam_flow_kgs","GV2 vazao vapor",         "kg/s",  1.0, hi=1200, system="gv2"),
     Point(21, "sg2_feed_flow_kgs", "GV2 vazao alim.",         "kg/s",  1.0, hi=1200, system="gv2"),
@@ -76,7 +76,7 @@ INPUT_REGISTERS = [
     # -- contencao
     Point(31, "containment_press_bar","Contencao pressao",    "bar", 100.0, lo=0, hi=6, system="contencao"),
     Point(32, "containment_rad_msvh","Contencao radiacao",    "mSv/h",100.0, hi=1000, system="contencao"),
-    Point(33, "containment_temp_c","Contencao temperatura",   "degC", 10.0, hi=150, system="contencao"),
+    Point(33, "containment_temp_c","Contencao temperatura",   "°C", 10.0, hi=150, system="contencao"),
     # -- venenos (Xenonio/Iodo, Samario, veneno queimavel)
     Point(34, "xenon_worth_pcm",   "Reatividade Xenonio",     "pcm",   1.0, signed=True, lo=-4000, hi=1000, system="nucleo"),
     Point(35, "xenon_pct",         "Concentracao Xe-135",     "%",    10.0, hi=300, system="nucleo"),
@@ -88,6 +88,22 @@ INPUT_REGISTERS = [
     Point(40, "primary_inventory_pct","Inventario primario",  "%",    10.0, hi=100, system="primario"),
     # -- periodo do reator (feedback de taxa)
     Point(41, "reactor_period_s",  "Periodo do reator",       "s",     1.0, signed=True, lo=-999, hi=999, system="nucleo"),
+    # -- instrumentacao nuclear (NIS) e decomposicao da reatividade
+    Point(42, "thermal_power_pct", "Potencia termica (calorimetrica)", "%", 10.0, hi=120, system="nucleo"),
+    Point(43, "sr_log_cps",        "Faixa-fonte (log10 cps)", "log cps", 1000.0, signed=True, lo=-1, hi=6, system="nucleo"),
+    Point(44, "ir_log_amps",       "Faixa intermediaria (log10 A)", "log A", 1000.0, signed=True, lo=-11, hi=-3, system="nucleo"),
+    Point(45, "startup_rate_dpm",  "Taxa de partida (SUR)",   "dpm", 100.0, signed=True, lo=-1, hi=5, system="nucleo"),
+    Point(46, "rod_steps",         "Barras (passos retirados)", "passos", 1.0, hi=228, system="nucleo"),
+    Point(47, "mtc_pcm_per_c",     "Coef. temp. moderador (MTC)", "pcm/°C", 10.0, signed=True, lo=-80, hi=20, system="nucleo"),
+    Point(48, "rod_worth_pcm",     "Reatividade das barras",  "pcm",   1.0, signed=True, lo=-7000, hi=1000, system="nucleo"),
+    Point(49, "doppler_worth_pcm", "Reatividade Doppler",     "pcm",   1.0, signed=True, lo=-2000, hi=4000, system="nucleo"),
+    Point(50, "moderator_worth_pcm","Reatividade moderador",  "pcm",   1.0, signed=True, lo=-2000, hi=4000, system="nucleo"),
+    Point(51, "boron_worth_pcm",   "Reatividade do boro",     "pcm",   1.0, signed=True, lo=-20000, hi=10000, system="nucleo"),
+    # -- secundario: despejo de vapor e alimentacao de partida
+    Point(52, "steam_dump_pct",    "Despejo de vapor (abertura)", "%", 10.0, hi=100, system="turbina"),
+    Point(53, "sfw_flow_kgs",      "Alimentacao de partida (SFW)", "kg/s", 1.0, hi=150, system="geral"),
+    Point(54, "cvs_flow_kgs",      "CVS vazao liquida (carga-descarga)", "kg/s", 10.0, signed=True, lo=-20, hi=20, system="primario"),
+    Point(55, "przr_level_program_pct", "Programa de nivel do PZR", "%", 10.0, hi=100, system="primario"),
 ]
 
 # --------------------------------------------------------------- DISCRETE INPUTS
@@ -120,6 +136,19 @@ DISCRETE_INPUTS = [
     Point(24, "sg1_relief_open",   "Alivio GV1 aberto", system="gv1"),
     Point(25, "sg2_relief_open",   "Alivio GV2 aberto", system="gv2"),
     Point(26, "safety_blocked",    "Salvaguardas bloqueadas", system="pxs"),
+    # -- permissivos / intertravamentos (logica de protecao)
+    Point(27, "p6_permissive",     "P-6 (IR acima de 1e-10 A)", system="nucleo"),
+    Point(28, "p7_low_power",      "P-7 baixa potencia (trips bloqueados)", system="nucleo"),
+    Point(29, "p10_permissive",    "P-10 (potencia > 10%)", system="nucleo"),
+    Point(30, "sr_trip_blocked",   "Trip faixa-fonte bloqueado", system="nucleo"),
+    Point(31, "lowpower_trips_blocked", "Trips IR/PR-baixo bloqueados", system="nucleo"),
+    Point(32, "rod_withdrawal_block", "Bloqueio de retirada (C-1/C-2)", system="nucleo"),
+    Point(33, "steam_dump_active", "Despejo de vapor ativo", system="turbina"),
+    Point(34, "feedwater_isolated","Alim. principal isolada", system="geral"),
+    Point(35, "startup_feed_active","Alim. de partida (SFW) ativa", system="geral"),
+    Point(36, "przr_heater_on",    "Aquecedores do PZR ligados", system="primario"),
+    Point(37, "przr_spray_on",     "Spray do PZR aberto", system="primario"),
+    Point(38, "main_feed_flowing", "Alim. principal entregando", system="geral"),
 ]
 
 # ----------------------------------------------------------------------- COILS
@@ -141,6 +170,13 @@ COILS = [
     Point(14, "cmd_manual_prhr",     "PRHR manual", system="pxs"),
     Point(15, "cmd_manual_ads",      "ADS manual", system="pxs"),
     Point(16, "cmd_block_safety",    "Bloqueia salvaguardas", system="pxs"),
+    Point(17, "cmd_block_sr_trip",   "Bloqueia trip faixa-fonte (P-6)", system="nucleo"),
+    Point(18, "cmd_block_lowpower_trips", "Bloqueia trips IR/PR-baixo (P-10)", system="nucleo"),
+    # -- estacoes AUTO/MANUAL por subsistema (0 = AUTO, padrao)
+    Point(19, "cmd_przr_press_manual", "Pressao PZR em MANUAL", system="primario"),
+    Point(20, "cmd_cvs_manual",      "Nivel PZR (CVS) em MANUAL", system="primario"),
+    Point(21, "cmd_steam_dump_manual", "Despejo de vapor em MANUAL", system="turbina"),
+    Point(22, "cmd_sfw_manual",      "Alim. de partida (SFW) em MANUAL", system="geral"),
 ]
 
 # --------------------------------------------------------------- HOLDING REGISTERS
@@ -157,6 +193,9 @@ HOLDING_REGISTERS = [
     Point(9,  "dmd_sg1_feed_valve_pct","Valvula agua alim. GV1",   "%", 10.0, hi=100, system="gv1"),
     Point(10, "sp_sg2_level_pct",    "Setpoint nivel GV2",         "%",   10.0, hi=100, system="gv2"),
     Point(11, "dmd_sg2_feed_valve_pct","Valvula agua alim. GV2",   "%", 10.0, hi=100, system="gv2"),
+    Point(12, "dmd_cvs_flow_kgs",    "CVS carga(+)/descarga(-) manual", "kg/s", 10.0, signed=True, lo=-20, hi=20, system="primario"),
+    Point(13, "dmd_steam_dump_pct",  "Despejo de vapor manual",    "%",   10.0, hi=100, system="turbina"),
+    Point(14, "dmd_sfw_pct",         "SFW manual (vazao)",         "%",   10.0, hi=100, system="geral"),
 ]
 
 

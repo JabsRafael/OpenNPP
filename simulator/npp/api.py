@@ -3,11 +3,15 @@ API HTTP + SSE que serve a HMI web (Nivel Purdue 2 — supervisao).
 
 Endpoints:
   GET  /                -> HMI (web/index.html)
+  GET  /help            -> manual do operador (significados, permissivos, siglas)
   GET  /app.js /style.css
   GET  /api/meta        -> metadados dos pontos (rotulos, unidades, faixas, sistema)
   GET  /api/state       -> snapshot unico (JSON)
   GET  /api/stream      -> Server-Sent Events (~4 Hz) com o estado ao vivo
-  POST /api/command     -> {"kind":"coil"|"hr", "key":..., "value":...}
+  POST /api/command     -> {"kind":"coil"|"hr"|"hr_step", "key":..., "value":...}
+                           {"kind":"reset"} -> rearme; responde {reset, reasons[]}
+                           {"kind":"rod", "value":"in"|"out"|"hold"} -> alavanca das barras
+                           {"kind":"timescale"|"speed"|"loca"|"scenario", "value":...}
 
 Somente biblioteca padrao (sem Flask/websockets). Os comandos da HMI escrevem nos
 MESMOS registradores Modbus: um operador legitimo e um atacante Modbus tem efeito
@@ -60,6 +64,8 @@ def make_handler(engine):
         def do_GET(self):
             if self.path == "/" or self.path == "/index.html":
                 self._static("index.html", "text/html; charset=utf-8")
+            elif self.path in ("/help", "/help.html", "/manual"):
+                self._static("help.html", "text/html; charset=utf-8")
             elif self.path == "/app.js":
                 self._static("app.js", "application/javascript")
             elif self.path == "/style.css":
@@ -96,12 +102,21 @@ def make_handler(engine):
             length = int(self.headers.get("Content-Length", 0))
             try:
                 data = json.loads(self.rfile.read(length) or b"{}")
-                kind, value = data["kind"], data["value"]
+                kind, value = data["kind"], data.get("value")
                 key = data.get("key")
+                result = {"ok": True}
                 if kind == "coil":
                     engine.set_coil(key, bool(value))
                 elif kind == "hr":
                     engine.set_hr(key, float(value))
+                elif kind == "hr_step":
+                    result["value"] = engine.step_hr(key, float(value))
+                elif kind == "rod":
+                    engine.rod_lever(str(value))
+                elif kind == "reset":
+                    result.update(engine.request_reset())
+                elif kind == "speed":
+                    engine.set_speed(value)
                 elif kind == "timescale":
                     engine.set_time_scale(value)
                 elif kind == "loca":
@@ -110,7 +125,7 @@ def make_handler(engine):
                     engine.set_scenario(value)
                 else:
                     raise ValueError("kind invalido")
-                self._send(200, json.dumps({"ok": True}).encode())
+                self._send(200, json.dumps(result).encode())
             except Exception as e:  # noqa: BLE001 — API de laboratorio
                 self._send(400, json.dumps({"ok": False, "error": str(e)}).encode())
 

@@ -7,11 +7,17 @@ calor do primario e e' regulado por seu proprio controlador de nivel (ver
 controllers/sg_level.py). Isso reproduz a arquitetura real do AP1000 (2 GVs,
 2 malhas de nivel independentes).
 
-Bus (compartilhado): le T_coolant, flow_frac, turbine_tripped.
-Estado proprio: T_sg, level, pressure, relief. Retorna Q_primario removido.
+Pressao = saturacao da agua do GV (tabela de vapor). Saidas de vapor:
+  turbina (valvula de admissao) + despejo ao condensador (steam dump) + alivio.
+Entradas de agua: alimentacao principal (isolavel) + alimentacao de partida
+(SFW, automatica quando a principal nao entrega).
+
+Bus (compartilhado): le T_coolant, flow_frac, turbine_tripped, steam_dump_frac,
+feed_isolated. Estado proprio: T_sg, level, pressure, relief. Retorna Q removido.
 """
 
 from .. import config as C
+from ..water import psat
 
 
 class SteamGenerator:
@@ -20,20 +26,45 @@ class SteamGenerator:
         self.T_sg = C.SG_TEMP_NOMINAL
         self.level = C.SG_LEVEL_NOMINAL
         self.pressure = C.SG_PRESS_NOMINAL
-        self.steam_flow = 0.0
-        self.feed_flow = 0.0
+        self.steam_flow = 0.0               # total que sai do GV
+        self.turbine_steam = 0.0
+        self.dump_steam = 0.0
+        self.feed_flow = 0.0                # total que entra (principal + SFW)
+        self.sfw_flow = 0.0
+        self.main_feed = 0.0
         self.relief_open = False
 
-    def step(self, bus, dt, feed_valve_pct, turbine_valve_pct, feed_on):
-        # ---- pressao secundaria (saturacao linearizada) --------------------
-        self.pressure = C.SG_PRESS_NOMINAL + C.SG_SAT_SLOPE * (self.T_sg - C.SG_TEMP_NOMINAL)
-        press_factor = max(0.0, min(1.2, self.pressure / C.SG_PRESS_NOMINAL))
+    def step(self, bus, dt, feed_valve_pct, turbine_valve_pct, feed_on, sfw_manual_pct=None):
+        # ---- pressao secundaria (saturacao) --------------------------------
+        self.pressure = psat(self.T_sg)
+        pf = max(0.0, min(1.4, self.pressure / C.SG_PRESS_NOMINAL))   # vazao ~ pressao
 
-        # ---- vazoes de vapor e alimentacao ---------------------------------
+        # ---- saidas de vapor -----------------------------------------------
         tv = 0.0 if bus.turbine_tripped else max(0.0, min(100.0, turbine_valve_pct)) / 100.0
-        self.steam_flow = C.FEED_FLOW_NOMINAL * tv * press_factor
-        self.feed_flow = (C.FEED_FLOW_NOMINAL * max(0.0, min(100.0, feed_valve_pct)) / 100.0
-                          if feed_on else 0.0)
+        self.turbine_steam = C.FEED_FLOW_NOMINAL * tv * pf
+        self.dump_steam = C.FEED_FLOW_NOMINAL * C.STEAM_DUMP_CAPACITY * bus.steam_dump_frac * pf
+        if self.pressure > C.SG_RELIEF_SETPOINT:
+            self.relief_open = True
+        elif self.pressure < C.SG_RELIEF_SETPOINT - 3.0:
+            self.relief_open = False
+        relief = C.SG_RELIEF_FLOW * pf if self.relief_open else 0.0
+        self.steam_flow = self.turbine_steam + self.dump_steam + relief
+
+        # ---- agua de alimentacao ------------------------------------------
+        main = 0.0
+        if feed_on and not bus.feed_isolated:
+            main = C.FEED_FLOW_NOMINAL * max(0.0, min(100.0, feed_valve_pct)) / 100.0
+        # SFW: em AUTO segura o nivel quando a alimentacao principal nao entrega;
+        # em MANUAL o operador define a vazao (% da capacidade)
+        if sfw_manual_pct is not None:
+            self.sfw_flow = C.SFW_MAX_FLOW * max(0.0, min(100.0, sfw_manual_pct)) / 100.0
+        elif main < 5.0:
+            want = self.steam_flow + 4.0 * (C.SFW_LEVEL_SP - self.level)
+            self.sfw_flow = max(0.0, min(C.SFW_MAX_FLOW, want))
+        else:
+            self.sfw_flow = 0.0
+        self.main_feed = main
+        self.feed_flow = main + self.sfw_flow
 
         # ---- balanco de energia do secundario ------------------------------
         Q_primary = C.H_COOLANT_SG * bus.flow_frac * (bus.T_coolant - self.T_sg)   # MW
@@ -44,12 +75,5 @@ class SteamGenerator:
         # ---- nivel por balanco de massa ------------------------------------
         self.level += (self.feed_flow - self.steam_flow) * C.SG_LEVEL_GAIN * dt
         self.level = max(0.0, min(100.0, self.level))
-
-        # ---- valvula de alivio ---------------------------------------------
-        if self.pressure > C.SG_RELIEF_SETPOINT:
-            self.relief_open = True
-            self.T_sg -= 2.0 * dt
-        elif self.pressure < C.SG_RELIEF_SETPOINT - 3.0:
-            self.relief_open = False
 
         return Q_primary

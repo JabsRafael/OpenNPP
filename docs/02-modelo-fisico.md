@@ -26,98 +26,95 @@ ReactorCore → SteamGenerator×2 → PrimarySystem → Turbine → Proteção(R
 | Turbina/gerador | `components/turbine.py` | Rotação, potência elétrica, sobrevelocidade |
 | Segurança passiva | `components/safety.py` | CMT, acumuladores, PRHR, ADS, IRWST, contenção |
 
-## 1. Neutrônica — cinética pontual
+## 1. Neutrônica — cinética pontual com fonte
 
-Potência neutronica `n` (normalizada, 1,0 = 100%) por **cinética pontual com 6
-grupos de neutrons atrasados**:
+Potência neutrônica `n` (normalizada, 1,0 = 100%) por **cinética pontual com 6
+grupos de nêutrons atrasados** e **fonte de nêutrons de partida** `S`:
 
 ```
-dn/dt   = (ρ − β)/Λ · n + Σ λ_i·C_i
+dn/dt   = (ρ − β)/Λ · n + Σ λ_i·C_i + S
 dC_i/dt = β_i/Λ · n − λ_i·C_i          (i = 1..6)
 ```
 
-- `β_i`, `λ_i`: frações e constantes de decaimento dos precursores (U-235 térmico).
-- `β_total ≈ 0,0065`; `Λ = 2×10⁻⁵ s` (tempo de geração de neutrons prontos).
-- Integração **subpassada** (200 subpassos por passo de 0,1 s) por estabilidade
-  numérica (o sistema é rígido). Há *clamp* de segurança em `n` e em `ρ`.
+- `β_total ≈ 0,0065`; `Λ = 2×10⁻⁵ s`.
+- **Fonte** (Cf-252/Sb-Be): o núcleo desligado tem população finita
+  (`n = S·Λ/|ρ|`, ~20–30 cps a −5000 pcm). Retirar barras abaixo da
+  criticalidade dá um período positivo *transitório* que depois estabiliza
+  (multiplicação subcrítica) — exatamente o que o operador vê na aproximação.
+- Integração **Euler implícito** (50 subpassos por 0,1 s): estável mesmo com
+  −10000 pcm (parada fria), sem o *clamp* em zero que o esquema explícito exigia.
+- **Instrumentação nuclear (NIS)** em três faixas: fonte (SR, cps), intermediária
+  (IR, A) e potência (PR, %); **SUR** (décadas/min) e período filtrados.
 
 ## 2. Reatividade — realimentação
 
-`ρ` (Δk/k) é a soma de contribuições, **todas com coeficientes negativos**
-(reator auto-regulado, como PWRs comerciais):
-
 ```
-ρ = ρ_barras + α_Doppler·(T_comb − T_ref) + α_moderador·(T_refrig − T_ref) + α_boro·(C_boro − C_ref)
+ρ = ρ_barras(curva S) + ρ_Doppler(√T) + ∫MTC(T,B,burnup)dT + α_B·ΔB + ρ_venenos
 ```
 
-| Termo | Coeficiente | Efeito |
+| Termo | Modelo | Valores |
 |---|---|---|
-| Barras de controle | 6000 pcm de curso total | atuação direta |
-| Doppler (combustível) | −2,5 pcm/K | negativo, rápido |
-| Moderador (refrigerante, MTC) | −15 pcm/K | negativo |
-| Boro | −0,8 pcm/ppm | ajuste lento de reatividade |
+| Barras | valor **integral em curva S** (`x − sin(2πx)/2π`); 228 passos | 6000 pcm; 48 passos/min manual, 72 em AUTO; SCRAM ~2,2 s |
+| Doppler | `−A·(√T_comb − √T_ref)` (K absolutos) | −2,5 pcm/K a 900 °C, maior a frio |
+| Moderador (MTC) | `MTC = −20 − 0,078·ΔT + 0,008·ΔB − 0,3·burnup` pcm/K | ~0 a frio; −20 BOC a plena carga; ~−55 fim de ciclo; **positivo** a frio com boro alto |
+| Boro | −10 pcm/ppm a quente (termo cruzado → ~−12 a frio) | CVS exponencial (feed & bleed) |
 
-Na condição nominal (barras a 75% retiradas, temperaturas de referência,
-800 ppm de boro) `ρ = 0` → **crítico a 100%**. Qualquer perturbação gera
-realimentação estabilizante. `1 pcm = 10⁻⁵`.
+Referência: barras 75%, Tavg 305 °C, 800 ppm, combustível 900 °C → `ρ = 0` a 100%.
+Defeito de potência HZP→HFP ≈ 1900 pcm. Parada fria (1900 ppm): ≈ −10800 pcm.
 
 ## 3. Termohidráulica
 
-**Combustível** (nó concentrado):
-```
-C_comb · dT_comb/dt = P_fissão − h_fc·(T_comb − T_refrig)
-```
+Capacidades térmicas com a massa real: **combustível 38 MJ/K** (τ ≈ 6,7 s),
+**RCS 1300 MJ/K** (~190 t de água + metal), **cada GV 500 MJ/K**. Aquecimento com
+o calor das 4 RCPs (20 MW) ≈ **40 °C/h** — ~6 h de 50 °C a 292 °C (use a
+velocidade da simulação).
 
-**Primário** (Tavg concentrado; entra calor do núcleo, saem os GVs e o PRHR):
-```
-C_refrig · dTavg/dt = Q_núcleo − Σ Q_GV − Q_PRHR   (− resfriamento por injeção de segurança)
-```
+- **Potência térmica** = fissão "pronta" `(1 − 6,6%)·n` + calor de decaimento.
+- **GV**: pressão = **saturação** da água do GV (tabela de vapor, `water.py`):
+  ~57 bar a plena carga, ~77 bar sem carga. Saídas: turbina, **despejo de vapor
+  ao condensador** (40%, automático: segura Tavg no programa após trip/baixa
+  carga) e alívio (80 bar). Entradas: alimentação principal (isolável por P-4/
+  P-14) e **alimentação de partida (SFW, ~6%)**, automática quando a principal não
+  entrega.
+- **Turbina**: só o vapor admitido gera potência; o despejado vai ao condensador.
 
-**Thot / Tcold** derivam da elevação no núcleo, função da potência e da vazão das
-bombas — se a vazão cai (RCP desligada), a elevação dispara → alta temperatura:
-```
-ΔT_núcleo = P_th / (W · cp)      Thot = Tavg + ΔT/2      Tcold = Tavg − ΔT/2
-```
+## 4. Pressurizador e balanço de massa
 
-**Gerador de vapor** (cada um, secundário):
-```
-C_GV · dT_GV/dt = Q_primário − Q_vapor
-Q_vapor = vazão_vapor · calor_latente
-pressão = P_nom + inclinação·(T_GV − T_nom)          (saturação linearizada)
-nível  += (vazão_alim − vazão_vapor) · ganho · dt     (balanço de massa)
-```
-
-**Turbina/gerador**: potência elétrica limitada pelo vapor disponível **e** pela
-potência térmica × rendimento; rotação com inércia; desarme por sobrevelocidade
-(3300 rpm).
-
-## 4. Pressurizador
-
-Pressão do primário controlada por expansão térmica (insurge/outsurge),
-aquecedor (sobe), spray (desce) e válvula de alívio (PORV, abre em 172 bar):
-```
-dP = expansão·dTavg + aquecedor − spray − alívio
-```
-Nível acompanha a densidade (Tavg) e a reposição de inventário por injeção.
+- **Massa**: o loop fica cheio enquanto o PZR tem água. Perda (LOCA/ADS) esvazia
+  primeiro o PZR, depois o loop; injeção enche o loop e depois o PZR.
+- **Nível** dinâmico: expansão térmica (1,3%/K) + **CVS** automático que segura o
+  programa (25% sem carga → 55% a plena carga) com capacidade limitada (20 kg/s).
+- **Pressão**: `dP = 0,9 bar/% · dNível + aquecedores (0,3 bar/s) − spray (1,5 bar/s) − PORV`;
+  aquecedores cortam com nível < 17%. Nunca abaixo da saturação do ramo quente;
+  com o PZR vazio o RCS é saturado (`P = Psat(Thot)`).
 
 ## 5. Calor de decaimento
 
-Dois polos exponenciais (rápido τ≈15 s, lento τ≈400 s) alimentados pela potência
-de fissão; após o SCRAM, a potência de fissão colapsa em segundos e o **calor de
-decaimento** (~6,5% inicial) domina, caindo devagar. A potência térmica total é
-`max(fissão, decaimento)`.
+**7 grupos exponenciais** ajustados à curva ANS-5.1 (após operação longa), com
+memória do histórico de potência: 1 s ≈ 6,2% · 100 s ≈ 3,2% · 1 h ≈ 1,4% ·
+1 dia ≈ 0,5% · 12 dias ≈ 0,2%. Núcleo novo (1ª partida) não tem calor residual.
 
-## 6. Proteção e segurança passiva
+## 6. Proteção, permissivos e segurança passiva
 
-- **RPS** (`protection.py`): desarma o reator (barras caem por gravidade, ~30%/s)
-  em fluxo alto, pressão PZR alta/baixa, nível baixo de GV, temperatura alta,
-  vazão baixa ou pressão de contenção alta.
-- **ESFAS**: atua as salvaguardas passivas por baixa pressão do PZR ("sinal S"),
-  alta pressão de contenção ou nível baixo de GV.
-- **PXS passiva** (`safety.py`): **PRHR** remove calor residual de forma
-  proporcional ao superaquecimento (auto-limitante → estabiliza em parada quente);
-  **CMT** e **acumuladores** injetam água borada; **ADS** despressuriza em 4
-  estágios; **contenção** pressuriza/irradia se houver dano ao combustível.
+- **RPS**: PR alto 109%, PR baixo 25% e IR 25% (bloqueáveis acima de **P-10**),
+  faixa-fonte 1e5 cps (bloqueável acima de **P-6**), taxa positiva de fluxo
+  (+5% em 2 s), pressão PZR alta 168 / baixa 128 bar, nível PZR alto 92%, vazão
+  baixa 87% (os três últimos bloqueados abaixo de **P-7**, 10%), nível baixo de GV,
+  sobretemperatura do combustível, contenção alta e **sinal S** (SI → trip).
+  Os bloqueios de P-6/P-10 são **manuais** (botões) e se reinstalam sozinhos
+  quando a potência cai.
+- **C-1/C-2**: bloqueiam a retirada de barras (IR alta / 103%). **C-5**: AUTO não
+  retira barras com a turbina < 15%.
+- **Rearme**: só com nenhuma condição de trip presente. A HMI/API devolve cada
+  condição com valor medido e setpoint (painel + console do navegador + log).
+- **Controle AUTO** (Westinghouse): turbina em rampa de 5%/min até o setpoint de
+  carga; barras seguem **Tref** (292 °C sem carga → 305 °C a 100%) + canal de
+  descasamento potência×carga.
+- **PXS**: PRHR (auto-limitante); **CMT** 2×70 t; **acumuladores** 2×57 t com N₂ a
+  48 bar (isolados abaixo de P-11); **ADS** em sequência AP1000 (ADS-1 com CMT <
+  67,5%, ADS-2/3 temporizados, ADS-4 com CMT < 20%), ventilando vapor; **IRWST**
+  por gravidade com o RCS despressurizado; contenção pressuriza com o vapor
+  liberado e é resfriada pelo PCS.
 
 ## 7. Venenos e escala de tempo (`components/reactor_poisons.py`)
 
@@ -144,31 +141,24 @@ térmicos; alto para observar Xenônio.
 
 ## 8. LOCA — perda de refrigerante (`primary.py`)
 
-Rompimento no primário (`loca_size` 0–1, via HMI): drena o **inventário** do RCS e
-despressuriza. Quando o inventário cai abaixo do limiar, o núcleo **descobre** e a
-transferência de calor combustível→refrigerante degrada (`bus.cooling_factor` → ~0),
-levando ao superaquecimento.
-
-Mitigação (Defense-in-Depth): a queda de pressão dispara o **ESFAS** → **CMT** e
-**PRHR** injetam; abaixo da pressão dos **acumuladores**, injeção rápida; o **ADS**
-despressuriza em estágios e o **IRWST** inunda. A injeção de segurança reenche o
-inventário. **Com as salvaguardas bloqueadas** (`cmd_block_safety`) nada disso
-atua → dano ao núcleo (combustível > 1200 °C) → radiação/pressão na contenção.
-Ver o playbook em `docs/07`.
+Área da ruptura 0–100% de uma guilhotina dupla (~12 t/s a 155 bar), vazão
+`∝ área·√ΔP`. Sequência física: o PZR esvazia (a pressão cai) → trip + sinal S →
+o RCS satura e a pressão **"pendura" na saturação** → a energia sai pela ruptura,
+GVs e PRHR → CMT → ADS → acumuladores → IRWST. Com o RCS na pressão da contenção
+só escoa a água acima do bocal da ruptura. Com o RCS aberto e saturado o calor
+residual **ferve** a água (*boil-off*). Núcleo seco → resfriamento só por vapor →
+combustível aquece ~1,5–2 K/s.
 
 ## 9. Validação (comportamento observado)
 
-Resultados do teste `plant.py` (passo 0,1 s, modo automático):
-
 | Cenário | Resultado |
 |---|---|
-| Regime permanente 100% | P=100%, Tavg=304 °C, PZR=155 bar, ~1111 MWe, ρ≈0 — estável |
-| Redução de carga p/ 80% | P segue a 80,2%, Tavg cai (reator segue turbina), ~895 MWe |
-| SCRAM manual | P → decaimento em segundos; estabiliza em **parada quente ~287 °C** com alívio dos GVs removendo o calor residual |
-| Perda das 4 RCPs | Vazão cai → RPS desarma por baixa vazão; Thot dispara (consequência severa) |
-| 10 min pós-SCRAM | Planta estável ~287 °C, PZR 154 bar, decaimento 0,6% — sem divergência numérica |
-| Xenônio pós-SCRAM (720×) | Xe sobe a **147% em ~8 h** (−1300 pcm), depois decai — pico/poço de iodo correto |
-| LOCA 60% **com** salvaguardas | ESFAS→CMT/ADS; combustível cai (761→380 °C) — **mitigado** |
-| LOCA 60% **sem** salvaguardas | Núcleo descobre, combustível sobe continuamente → dano/radiação na contenção |
-
-Sem NaN/Inf em nenhum cenário. Detalhes de parâmetros: `simulator/npp/config.py`.
+| Regime permanente 100% | P=100%, Tavg=305 °C, PZR=155 bar, ~1115 MWe, ρ≈0 |
+| AUTO 100→50→100% | rampa de 5%/min, Tavg no programa (298 °C a 50%), sem overshoot |
+| SCRAM a 100% | despejo de vapor segura Tavg ~293 °C, PZR ~140 bar (sem SI), GV 77 bar; decaimento 1,4% em 1 h; **rearme liberado** |
+| Parada quente → crítico | ECP ~150 passos a 880 ppm; o Xe pós-trip tira reatividade se o operador não compensar |
+| Subida de potência | trip da faixa-fonte se não bloqueado acima de P-6; ponto de adição de calor ~1%; SFW não segura os GVs acima de ~6% sem a alimentação principal |
+| Perda de 1 RCP a 100% | vazão 75% < 87% → trip |
+| Partida a frio | 4 RCPs + aquecedor: ~40 °C/h, ~6 h até 292 °C |
+| LOCA 1% / 10% / 100% **com** salvaguardas | núcleo permanece coberto, combustível < 350 °C após o trip |
+| LOCA 10% / 100% **sem** salvaguardas | núcleo seca, combustível > 1200 °C (dano) e contenção pressuriza |
