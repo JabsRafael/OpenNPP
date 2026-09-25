@@ -36,6 +36,8 @@ const CHIPS = [
 ];
 // sliders de demanda manual — travados no modo AUTO
 const MANUAL_KEYS = ["dmd_rod_pct", "dmd_rcp_speed_pct", "dmd_turbine_valve_pct", "dmd_sg1_feed_valve_pct", "dmd_sg2_feed_valve_pct"];
+// coils que nao viram botao no painel (o "Rearmar reator" ja faz o reset)
+const SKIP_COILS = new Set(["cmd_reset_trip"]);
 const fmtPeriod = v => Math.abs(v) >= 999 ? "estável" : `${v > 0 ? "+" : ""}${Math.round(v)} s`;
 const fmtT = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
 let LAST_EV = 0;
@@ -118,7 +120,7 @@ function buildAlarms() {
 function buildControls() {
   const panels = { primary: {}, secondary: {} };
   const add = (pan, sys, kind, p) => (panels[pan][sys] = panels[pan][sys] || { co: [], hr: [] })[kind].push(p);
-  META.co.forEach(p => add(panelOf(p.system, p.key), p.system === "geral" ? (p.key === "cmd_feed_pump_start" ? "gv1" : "primario") : p.system, "co", p));
+  META.co.forEach(p => { if (SKIP_COILS.has(p.key)) return; add(panelOf(p.system, p.key), p.system === "geral" ? (p.key === "cmd_feed_pump_start" ? "gv1" : "primario") : p.system, "co", p); });
   META.hr.forEach(p => add(panelOf(p.system, p.key), p.system, "hr", p));
   for (const [pan, elId] of [["primary", "ctl-primary"], ["secondary", "ctl-secondary"]]) {
     const box = document.getElementById(elId);

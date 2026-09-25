@@ -166,22 +166,19 @@
   <div class="card panel-sim">
     <h3>■ Simulação &amp; Malfunções</h3>
     <div class="ctl-group">
-      <h4>Cenário inicial (recarrega a planta)</h4>
+      <h4 title="'Operando 100%' já vem em AUTOMÁTICO (planta em potência).&#10;Os cenários de partida (parada quente, frio, 1ª partida) iniciam em MANUAL — e ao tripar, sempre cai para MANUAL.&#10;Nada é facilitado: partida a frio exige ligar bombas + aquecedor, pressurizar e aquecer (~90 min, ou acelere o tempo), rearmar, diluir o boro e retirar barras devagar olhando o Período.">Cenário inicial (recarrega a planta) &#9432;</h4>
       <div class="coils" id="scenario-btns"></div>
-      <p class="hint">"Operando 100%" já vem sob controle <b>AUTOMÁTICO</b> (planta em potência). Os cenários de <b>partida</b> (parada quente, frio, 1ª partida) iniciam em <b>MANUAL</b> — e ao tripar, sempre cai para MANUAL. Nada é facilitado: partida a frio exige ligar bombas + aquecedor, pressurizar e aquecer (~90 min, ou acelere o tempo), rearmar, diluir o boro e retirar barras devagar observando o Período.</p>
     </div>
     <div class="ctl-group">
       <h4>Repartida do reator (após SCRAM)</h4>
-      <div class="coils"><button class="btn" onclick="restart()">▶ Rearmar reator (reset do trip)</button></div>
-      <p class="hint">Ao <b>tripar, o controle vai para MANUAL</b> — a repartida é na mão, como num reator real. Sequência: (1) rearme (desliga SCRAM + reset); (2) ligue o <b>aquecedor do PZR</b> p/ segurar a pressão; (3) mantenha a <b>válvula da turbina baixa</b> (senão super-resfria e cai a pressão); (4) retire as <b>barras devagar</b> observando o <b>Período</b> — se ficar curto (&lt;25 s), pare. Reabilite o AUTO só quando estável.</p>
+      <div class="coils"><button class="btn" onclick="restart()" title="Ao tripar, o controle vai para MANUAL — repartida na mão.&#10;1) Rearmar (desliga SCRAM + reset do trip).&#10;2) Ligar o aquecedor do PZR (segura a pressão).&#10;3) Manter a válvula da turbina baixa (senão super-resfria e a pressão cai).&#10;4) Retirar as barras DEVAGAR olhando o Período — se ficar curto (<25 s), pare.&#10;Reabilite o AUTO só quando estável.">▶ Rearmar reator (reset do trip) &#9432;</button></div>
     </div>
     <div class="ctl-group">
-      <h4>Escala de tempo (acelera venenos/Xenônio)</h4>
+      <h4 title="Acelera a evolução de venenos/burnup. Xe-135 entra em ~9–11 h — acelere para observar o pico e o 'poço de iodo'.">Escala de tempo &#9432;</h4>
       <div class="coils" id="timescale-btns"></div>
-      <p class="hint">Xe-135 entra em ~9–11 h. Acelere para observar o pico e o "poço de iodo".</p>
     </div>
     <div class="ctl-group">
-      <h4>LOCA — rompimento no primário</h4>
+      <h4 title="Com salvaguardas: CMT/ADS/IRWST mitigam. Com bloqueio de salvaguardas: o núcleo descobre e superaquece.">LOCA — rompimento no primário &#9432;</h4>
       <div class="slider">
         <label>Área de rompimento</label>
         <input type="range" id="loca-range" min="0" max="100" step="5" value="0">
@@ -193,7 +190,6 @@
         <button class="btn danger" onclick="setLoca(60)">Médio</button>
         <button class="btn danger" onclick="setLoca(100)">Grande</button>
       </div>
-      <p class="hint">Com salvaguardas: CMT/ADS/IRWST mitigam. Com <b>bloqueio de salvaguardas</b>: o núcleo descobre e superaquece.</p>
     </div>
   </div>
 </section>
