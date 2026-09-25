@@ -107,3 +107,29 @@ footer { padding: 8px 18px; color: var(--muted); font-size: 11px; border-top: 1p
   .situation { grid-template-columns: 1fr; }
   .controls-deck { grid-template-columns: 1fr; }
 }
+
+/* ===== símbolos do P&ID (redesenho) ===== */
+.mimic .tag { fill: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .3px; }
+.mimic .zone { fill: #4d6a8a; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; }
+.rpv { fill: #132033; stroke: #4a6a8a; stroke-width: 2; }
+.nofill { fill: none; }
+.crdm { fill: #39516a; stroke: #5a7a9a; stroke-width: 1; }
+.fill { transition: y .3s linear, height .3s linear; }
+.fill.cool { fill: #1f6f9c; opacity: .5; }
+.fill.pzr { fill: #2a7fa0; opacity: .55; }
+.fill.steam { fill: #216e8a; opacity: .45; }
+.utube { stroke: #4a5a6e; stroke-width: 1.3; fill: none; }
+.heater { stroke: var(--hot); stroke-width: 1.6; }
+.cond { stroke: #4a5a6e; stroke-width: 1.3; fill: none; }
+/* bombas (via <use>) — herdam fill/stroke do grupo .pump */
+.pump { fill: var(--panel2); stroke: var(--edge); stroke-width: 1.6; }
+.pump.on { fill: #16351f; stroke: var(--ok); }
+.pump.off { fill: #351616; stroke: var(--trip); }
+/* nós PXS / ADS */
+.node rect, .node ellipse, .node path { fill: var(--panel2); stroke: var(--edge); stroke-width: 1.6; }
+.node.act rect, .node.act ellipse, .node.act path { fill: #143d1f; stroke: var(--ok); }
+/* chips de leitura */
+.chip rect { fill: #0e141d; stroke: #28313f; stroke-width: 1; }
+.chip .cl { fill: var(--muted); font-size: 8px; text-transform: uppercase; letter-spacing: .2px; }
+.chip .cv { fill: var(--ink); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.chip .cv.big { fill: #7ee787; font-size: 16px; }

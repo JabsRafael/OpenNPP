@@ -18,137 +18,104 @@
   <div class="status-badge" id="s-status">NORMAL</div>
 </header>
 
-<!-- ================= PAINEL DE SITUAÇÃO (topo) ================= -->
 <section class="situation">
   <div class="card mimic-card">
     <h3>Diagrama da planta (P&amp;ID)</h3>
-    <svg class="mimic" viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg">
+    <svg class="mimic" id="mimic" viewBox="0 0 1060 600" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <pattern id="hatch" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
-          <line x1="0" y1="0" x2="0" y2="6" stroke="#3a5a3f" stroke-width="3"/>
+        <pattern id="hatch" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+          <line x1="0" y1="0" x2="0" y2="7" stroke="#c47b3a" stroke-width="3"/>
         </pattern>
+        <clipPath id="rpvClip"><path d="M110,305 Q110,276 150,276 Q190,276 190,305 V445 Q190,474 150,474 Q110,474 110,445 Z"/></clipPath>
+        <clipPath id="pzrClip"><rect x="250" y="120" width="42" height="95" rx="10"/></clipPath>
+        <clipPath id="sg1Clip"><path d="M350,150 h110 v110 q0,22 -22,22 h-66 q-22,0 -22,-22 z"/></clipPath>
+        <clipPath id="sg2Clip"><path d="M350,392 h110 v110 q0,22 -22,22 h-66 q-22,0 -22,-22 z"/></clipPath>
+        <g id="pumpSym"><circle r="14"/><path d="M0,-14 L11,5 L-11,5 Z"/></g>
       </defs>
 
       <!-- contenção -->
-      <rect class="containment" x="28" y="60" width="540" height="512" rx="14"/>
-      <text class="lbl" x="40" y="52">Edifício de contenção</text>
+      <rect class="containment" x="26" y="60" width="612" height="520" rx="14"/>
+      <text class="zone" x="38" y="52">Edifício de contenção</text>
 
       <!-- ================= tubulações ================= -->
-      <!-- hot legs (RPV -> GV) -->
-      <polyline id="hot1" class="pipe hot" points="175,250 175,150 360,150"/>
-      <polyline id="hot2" class="pipe hot" points="175,395 175,470 360,470"/>
-      <!-- cold legs (GV -> RCP -> RPV) -->
-      <polyline id="cold1" class="pipe cold" points="360,215 250,215 250,300 190,300"/>
-      <polyline id="cold2" class="pipe cold" points="360,415 250,415 250,340 190,340"/>
-      <!-- vapor GV -> turbina -->
-      <polyline id="steam1" class="pipe steam" points="460,140 620,140 620,120 650,120"/>
-      <polyline id="steam2" class="pipe steam" points="460,460 640,460 640,150 650,150"/>
-      <!-- condensado turbina -> GV -->
-      <polyline id="feed" class="pipe cold" points="695,290 700,540 250,540 250,470 360,470"/>
+      <polyline id="hot1" class="pipe hot" points="190,330 300,330 300,212 350,212"/>
+      <polyline id="cold1" class="pipe cold" points="350,258 236,258 236,346 190,346"/>
+      <polyline id="hot2" class="pipe hot" points="190,420 300,420 300,458 350,458"/>
+      <polyline id="cold2" class="pipe cold" points="350,500 236,500 236,412 190,412"/>
+      <line class="pipe hot" x1="271" y1="215" x2="271" y2="330"/>
+      <polyline id="steam1" class="pipe steam" points="405,150 405,104 700,104 700,126"/>
+      <polyline id="steam2" class="pipe steam" points="460,420 500,420 500,112 700,112"/>
+      <polyline id="feed" class="pipe cold" points="745,320 745,560 474,560 474,150"/>
 
       <!-- ================= RPV (vaso de pressão do reator) ================= -->
-      <g id="rpv-group">
-        <!-- CRDM (mecanismos de acionamento das barras) -->
-        <rect class="crdm" x="118" y="188" width="10" height="26"/>
-        <rect class="crdm" x="136" y="188" width="10" height="26"/>
-        <rect class="crdm" x="154" y="188" width="10" height="26"/>
-        <!-- vaso -->
-        <path class="vessel rpv" d="M100,235 q0,-25 25,-25 h30 q25,0 25,25 v185 q0,20 -20,20 h-40 q-20,0 -20,-20 z"/>
-        <!-- núcleo (região de combustível) -->
-        <rect id="core" class="core" x="112" y="345" width="56" height="70" rx="2"/>
-        <!-- barras de controle (inserção variável) -->
-        <line class="rod" id="rod0" x1="123" y1="215" x2="123" y2="360"/>
-        <line class="rod" id="rod1" x1="141" y1="215" x2="141" y2="360"/>
-        <line class="rod" id="rod2" x1="159" y1="215" x2="159" y2="360"/>
-        <text class="lbl" x="140" y="205" text-anchor="middle">RPV</text>
-        <text class="rd big" data-k="reactor_power_pct" x="140" y="300" text-anchor="middle">--</text>
-        <text class="rd" data-k="fuel_temp_c" x="140" y="318" text-anchor="middle">--</text>
-        <text class="rd" data-k="rod_position_pct" x="140" y="440" text-anchor="middle">--</text>
-        <text class="lbl" x="140" y="453" text-anchor="middle">barras retiradas</text>
-      </g>
+      <rect class="crdm" x="130" y="250" width="8" height="28"/>
+      <rect class="crdm" x="146" y="250" width="8" height="28"/>
+      <rect class="crdm" x="162" y="250" width="8" height="28"/>
+      <path class="vessel rpv" d="M110,305 Q110,276 150,276 Q190,276 190,305 V445 Q190,474 150,474 Q110,474 110,445 Z"/>
+      <g clip-path="url(#rpvClip)"><rect id="rpvFill" class="fill cool" x="110" y="305" width="80" height="169"/></g>
+      <rect id="core" class="core" x="124" y="372" width="52" height="74" rx="2"/>
+      <line class="rod" id="rod0" x1="134" y1="252" x2="134" y2="400"/>
+      <line class="rod" id="rod1" x1="150" y1="252" x2="150" y2="400"/>
+      <line class="rod" id="rod2" x1="166" y1="252" x2="166" y2="400"/>
+      <path class="vessel rpv nofill" d="M110,305 Q110,276 150,276 Q190,276 190,305 V445 Q190,474 150,474 Q110,474 110,445 Z"/>
+      <text class="tag" x="150" y="492" text-anchor="middle">REATOR (RPV)</text>
 
       <!-- ================= Pressurizador ================= -->
-      <g>
-        <rect class="vessel hot" x="252" y="112" width="38" height="88" rx="8"/>
-        <path class="heater" d="M258,190 h26 M258,194 h26"/>
-        <line class="pipe hot" x1="271" y1="200" x2="271" y2="150"/>
-        <text class="lbl" x="271" y="106" text-anchor="middle">PZR</text>
-        <text class="rd" data-k="przr_pressure_bar" x="271" y="140" text-anchor="middle">--</text>
-        <text class="rd" data-k="przr_level_pct" x="271" y="158" text-anchor="middle">--</text>
-      </g>
+      <rect class="vessel hot" x="250" y="120" width="42" height="95" rx="10"/>
+      <g clip-path="url(#pzrClip)"><rect id="pzrFill" class="fill pzr" x="250" y="160" width="42" height="55"/></g>
+      <path class="heater" d="M256,206 h30 M256,210 h30"/>
+      <text class="tag" x="271" y="114" text-anchor="middle">PZR</text>
+      <!-- ADS -->
+      <g id="ads" class="node"><path d="M264,86 l14,0 -7,10 z M264,106 l14,0 -7,-10 z"/></g>
+      <text class="tag" x="288" y="96" text-anchor="start">ADS</text>
 
       <!-- ================= Bombas RCP ================= -->
-      <g>
-        <use href="#pumpsym" x="0" y="0"/>
-        <g id="rcp1" class="pump"><circle cx="250" cy="215" r="13"/><path d="M250,202 L261,221 L239,221 Z"/></g>
-        <g id="rcp2" class="pump"><circle cx="210" cy="300" r="13"/><path d="M210,287 L221,306 L199,306 Z"/></g>
-        <g id="rcp3" class="pump"><circle cx="250" cy="415" r="13"/><path d="M250,402 L261,421 L239,421 Z"/></g>
-        <g id="rcp4" class="pump"><circle cx="210" cy="340" r="13"/><path d="M210,327 L221,346 L199,346 Z"/></g>
-        <text class="lbl" x="220" y="372" text-anchor="middle">4× RCP</text>
-      </g>
+      <g id="rcp1" class="pump"><use href="#pumpSym" x="236" y="290"/></g>
+      <g id="rcp2" class="pump"><use href="#pumpSym" x="236" y="332"/></g>
+      <g id="rcp3" class="pump"><use href="#pumpSym" x="236" y="470"/></g>
+      <g id="rcp4" class="pump"><use href="#pumpSym" x="236" y="428"/></g>
+      <text class="tag" x="292" y="452" text-anchor="middle">4× RCP</text>
 
-      <!-- ================= Geradores de vapor (símbolo com feixe em U) ======= -->
-      <g>
-        <path class="vessel" d="M360,120 h100 v90 q0,20 -20,20 h-60 q-20,0 -20,-20 z"/>
-        <path class="utube" d="M378,130 v70 M394,130 v70 M410,130 v70 M426,130 v70 M442,130 v70"/>
-        <path class="utube" d="M378,200 q8,10 16,0 M410,200 q8,10 16,0"/>
-        <text class="lbl" x="410" y="114" text-anchor="middle">Gerador de Vapor 1</text>
-        <text class="rd" data-k="sg1_level_pct" x="500" y="150" text-anchor="start">--</text>
-        <text class="rd" data-k="sg1_pressure_bar" x="500" y="168" text-anchor="start">--</text>
-      </g>
-      <g>
-        <path class="vessel" d="M360,440 h100 v90 q0,20 -20,20 h-60 q-20,0 -20,-20 z" transform="translate(0,-60)"/>
-        <path class="utube" d="M378,390 v70 M394,390 v70 M410,390 v70 M426,390 v70 M442,390 v70"/>
-        <text class="lbl" x="410" y="384" text-anchor="middle">Gerador de Vapor 2</text>
-        <text class="rd" data-k="sg2_level_pct" x="500" y="420" text-anchor="start">--</text>
-        <text class="rd" data-k="sg2_pressure_bar" x="500" y="438" text-anchor="start">--</text>
-      </g>
+      <!-- ================= Geradores de Vapor ================= -->
+      <path class="vessel" d="M350,150 h110 v110 q0,22 -22,22 h-66 q-22,0 -22,-22 z"/>
+      <g clip-path="url(#sg1Clip)"><rect id="sg1Fill" class="fill steam" x="350" y="200" width="110" height="82"/></g>
+      <path class="utube" d="M368,164 v96 M386,164 v96 M404,164 v96 M422,164 v96 M440,164 v96"/>
+      <path class="utube" d="M368,260 q9,12 18,0 M404,260 q9,12 18,0"/>
+      <path class="vessel nofill" d="M350,150 h110 v110 q0,22 -22,22 h-66 q-22,0 -22,-22 z"/>
+      <text class="tag" x="405" y="144" text-anchor="middle">Gerador de Vapor 1</text>
 
-      <!-- ================= Turbina / Gerador (fora da contenção) ============ -->
-      <g>
-        <polygon id="turbine" class="turbine" points="650,110 700,95 700,175 650,160"/>
-        <polygon class="turbine" points="702,100 740,88 740,182 702,170"/>
-        <circle id="gen" class="gen" cx="775" cy="135" r="20"/>
-        <text class="gtext" x="775" y="141" text-anchor="middle">G</text>
-        <line class="pipe cold" x1="740" y1="135" x2="755" y2="135"/>
-        <text class="lbl" x="700" y="82" text-anchor="middle">Turbina / Gerador</text>
-        <text class="rd big" data-k="gen_power_mwe" x="700" y="215" text-anchor="middle">--</text>
-        <text class="rd" data-k="turbine_rpm" x="700" y="233" text-anchor="middle">--</text>
-      </g>
+      <path class="vessel" d="M350,392 h110 v110 q0,22 -22,22 h-66 q-22,0 -22,-22 z"/>
+      <g clip-path="url(#sg2Clip)"><rect id="sg2Fill" class="fill steam" x="350" y="442" width="110" height="82"/></g>
+      <path class="utube" d="M368,406 v96 M386,406 v96 M404,406 v96 M422,406 v96 M440,406 v96"/>
+      <path class="utube" d="M368,502 q9,12 18,0 M404,502 q9,12 18,0"/>
+      <path class="vessel nofill" d="M350,392 h110 v110 q0,22 -22,22 h-66 q-22,0 -22,-22 z"/>
+      <text class="tag" x="405" y="386" text-anchor="middle">Gerador de Vapor 2</text>
 
-      <!-- condensador -->
-      <g>
-        <rect class="vessel" x="650" y="250" width="90" height="42" rx="4"/>
-        <path class="cond" d="M656,264 h78 M656,272 h78 M656,280 h78"/>
-        <text class="lbl" x="695" y="246" text-anchor="middle">Condensador</text>
-        <line class="pipe steam" x1="695" y1="175" x2="695" y2="250"/>
-        <path class="cw" d="M648,300 h94"/>
-      </g>
+      <!-- ================= Turbina / Gerador ================= -->
+      <polygon id="turbine" class="turbine" points="700,118 748,102 748,188 700,172"/>
+      <polygon class="turbine" points="750,108 792,94 792,196 750,182"/>
+      <circle id="gen" class="gen" cx="828" cy="145" r="21"/>
+      <text class="gtext" x="828" y="151" text-anchor="middle">G</text>
+      <line class="pipe cold" x1="792" y1="145" x2="807" y2="145"/>
+      <text class="tag" x="746" y="90" text-anchor="middle">Turbina / Gerador</text>
+
+      <!-- Condensador -->
+      <rect class="vessel" x="700" y="272" width="92" height="44" rx="4"/>
+      <path class="cond" d="M708,286 h76 M708,294 h76 M708,302 h76"/>
+      <text class="tag" x="746" y="266" text-anchor="middle">Condensador</text>
+      <line class="pipe steam" x1="746" y1="196" x2="746" y2="272"/>
 
       <!-- ================= Segurança passiva (PXS) ================= -->
-      <text class="lbl" x="45" y="500">Segurança passiva (PXS)</text>
-      <g id="cmt" class="pxs-node"><rect x="45" y="150" width="30" height="38" rx="3"/></g>
-      <text class="lbl" x="60" y="200" text-anchor="middle">CMT</text>
-      <text class="rd sm" data-k="cmt1_level_pct" x="60" y="145" text-anchor="middle">--</text>
-      <g id="accum" class="pxs-node"><ellipse cx="60" cy="245" rx="16" ry="20"/></g>
-      <text class="lbl" x="60" y="278" text-anchor="middle">ACUM</text>
-      <text class="rd sm" data-k="accum_press_bar" x="60" y="215" text-anchor="middle">--</text>
-      <g id="prhr" class="pxs-node"><rect x="45" y="320" width="30" height="30" rx="3"/><path d="M50,335 h20" stroke="#8fb" fill="none"/></g>
-      <text class="lbl" x="60" y="365" text-anchor="middle">PRHR</text>
-      <text class="rd sm" data-k="prhr_flow_pct" x="60" y="315" text-anchor="middle">--</text>
-      <g id="ads" class="pxs-node"><path d="M300,90 l14,-10 v20 z M314,90 l-14,-10 v20 z" transform="translate(-7,0)"/></g>
-      <text class="lbl" x="300" y="70" text-anchor="middle">ADS</text>
-
-      <!-- inventário / contenção -->
-      <text class="lbl" x="540" y="520" text-anchor="end">Inventário RCS</text>
-      <text class="rd" data-k="primary_inventory_pct" x="540" y="538" text-anchor="end">--</text>
-      <text class="lbl" x="540" y="52" text-anchor="end">Contenção</text>
-      <text class="rd" data-k="containment_press_bar" x="540" y="70" text-anchor="end">--</text>
-      <text class="rd" data-k="containment_rad_msvh" x="540" y="88" text-anchor="end">--</text>
+      <text class="zone" x="57" y="104" text-anchor="middle">PXS</text>
+      <g id="cmt" class="node"><rect x="40" y="120" width="34" height="40" rx="3"/></g>
+      <text class="tag" x="57" y="115" text-anchor="middle">CMT</text>
+      <g id="accum" class="node"><ellipse cx="57" cy="232" rx="17" ry="21"/></g>
+      <text class="tag" x="57" y="205" text-anchor="middle">ACUM</text>
+      <g id="prhr" class="node"><rect x="40" y="315" width="34" height="34" rx="3"/><path d="M45,332 h24"/></g>
+      <text class="tag" x="57" y="310" text-anchor="middle">PRHR</text>
     </svg>
   </div>
 
-  <!-- coluna direita da situação -->
   <div class="situation-side">
     <div class="card">
       <h3>Núcleo &amp; reatividade</h3>
@@ -180,7 +147,6 @@
   </div>
 </section>
 
-<!-- ================= PAINÉIS DE CONTROLE (base) ================= -->
 <section class="controls-deck">
   <div class="card panel-primary">
     <h3>■ Painel do Primário &amp; Reator</h3>
