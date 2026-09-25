@@ -133,3 +133,18 @@ footer { padding: 8px 18px; color: var(--muted); font-size: 11px; border-top: 1p
 .chip .cl { fill: var(--muted); font-size: 8px; text-transform: uppercase; letter-spacing: .2px; }
 .chip .cv { fill: var(--ink); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .chip .cv.big { fill: #7ee787; font-size: 16px; }
+
+/* modo AUTO/MANUAL e travas */
+#mode-hint { font-weight: 600; margin: 0 0 8px; }
+#mode-hint.mode-auto { color: var(--accent); }
+.slider.locked { opacity: .4; }
+.slider.locked input[type=range] { cursor: not-allowed; }
+
+/* registro de eventos */
+.eventbar { padding: 12px 12px 0; }
+.eventlog { display: flex; flex-direction: column; gap: 3px; max-height: 130px; overflow-y: auto; font-size: 12px; }
+.ev { padding: 3px 8px; border-radius: 4px; background: var(--panel2); border-left: 3px solid var(--edge); }
+.ev .t { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 10px; }
+.ev.info { border-left-color: var(--accent); }
+.ev.warn { border-left-color: var(--warn); }
+.ev.trip { border-left-color: var(--trip); background: #2a1414; }

@@ -11,6 +11,7 @@
   <div class="brand">OpenNPP <small>AP1000 · Sala de Controle · Simulador OT</small></div>
   <div class="stat"><span class="v" id="s-power">--</span><span class="k">Potência reator</span></div>
   <div class="stat"><span class="v" id="s-mwe">--</span><span class="k">Geração MWe</span></div>
+  <div class="stat"><span class="v" id="s-period">--</span><span class="k">Período</span></div>
   <div class="stat"><span class="v" id="s-tavg">--</span><span class="k">Tavg</span></div>
   <div class="stat"><span class="v" id="s-przr">--</span><span class="k">Pressão RCS</span></div>
   <div class="stat"><span class="v" id="s-clock">--</span><span class="k">Tempo reator</span></div>
@@ -21,33 +22,33 @@
 <section class="situation">
   <div class="card mimic-card">
     <h3>Diagrama da planta (P&amp;ID)</h3>
-    <svg class="mimic" id="mimic" viewBox="0 0 1060 600" xmlns="http://www.w3.org/2000/svg">
+    <svg class="mimic" id="mimic" viewBox="0 0 1180 600" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <pattern id="hatch" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
           <line x1="0" y1="0" x2="0" y2="7" stroke="#c47b3a" stroke-width="3"/>
         </pattern>
         <clipPath id="rpvClip"><path d="M110,305 Q110,276 150,276 Q190,276 190,305 V445 Q190,474 150,474 Q110,474 110,445 Z"/></clipPath>
         <clipPath id="pzrClip"><rect x="250" y="120" width="42" height="95" rx="10"/></clipPath>
-        <clipPath id="sg1Clip"><path d="M350,150 h110 v110 q0,22 -22,22 h-66 q-22,0 -22,-22 z"/></clipPath>
-        <clipPath id="sg2Clip"><path d="M350,392 h110 v110 q0,22 -22,22 h-66 q-22,0 -22,-22 z"/></clipPath>
+        <clipPath id="sg1Clip"><path d="M430,150 h130 v110 q0,22 -22,22 h-86 q-22,0 -22,-22 z"/></clipPath>
+        <clipPath id="sg2Clip"><path d="M430,392 h130 v110 q0,22 -22,22 h-86 q-22,0 -22,-22 z"/></clipPath>
         <g id="pumpSym"><circle r="14"/><path d="M0,-14 L11,5 L-11,5 Z"/></g>
       </defs>
 
-      <!-- contenção -->
-      <rect class="containment" x="26" y="60" width="612" height="520" rx="14"/>
+      <rect class="containment" x="26" y="60" width="776" height="520" rx="14"/>
       <text class="zone" x="38" y="52">Edifício de contenção</text>
 
-      <!-- ================= tubulações ================= -->
-      <polyline id="hot1" class="pipe hot" points="190,330 300,330 300,212 350,212"/>
-      <polyline id="cold1" class="pipe cold" points="350,258 236,258 236,346 190,346"/>
-      <polyline id="hot2" class="pipe hot" points="190,420 300,420 300,458 350,458"/>
-      <polyline id="cold2" class="pipe cold" points="350,500 236,500 236,412 190,412"/>
+      <!-- tubulações -->
+      <polyline id="hot1" class="pipe hot" points="190,330 320,330 320,212 430,212"/>
+      <polyline id="cold1" class="pipe cold" points="430,258 236,258 236,346 190,346"/>
+      <polyline id="hot2" class="pipe hot" points="190,420 320,420 320,458 430,458"/>
+      <polyline id="cold2" class="pipe cold" points="430,500 236,500 236,412 190,412"/>
       <line class="pipe hot" x1="271" y1="215" x2="271" y2="330"/>
-      <polyline id="steam1" class="pipe steam" points="405,150 405,104 700,104 700,126"/>
-      <polyline id="steam2" class="pipe steam" points="460,420 500,420 500,112 700,112"/>
-      <polyline id="feed" class="pipe cold" points="745,320 745,560 474,560 474,150"/>
+      <polyline id="steam1" class="pipe steam" points="485,150 485,104 880,104 880,126"/>
+      <polyline id="steam2" class="pipe steam" points="560,420 700,420 700,112 880,112"/>
+      <polyline id="feed" class="pipe cold" points="926,318 926,562 820,562 820,150 560,150"/>
+      <polyline id="feed2" class="pipe cold" points="820,392 560,392"/>
 
-      <!-- ================= RPV (vaso de pressão do reator) ================= -->
+      <!-- RPV -->
       <rect class="crdm" x="130" y="250" width="8" height="28"/>
       <rect class="crdm" x="146" y="250" width="8" height="28"/>
       <rect class="crdm" x="162" y="250" width="8" height="28"/>
@@ -60,52 +61,50 @@
       <path class="vessel rpv nofill" d="M110,305 Q110,276 150,276 Q190,276 190,305 V445 Q190,474 150,474 Q110,474 110,445 Z"/>
       <text class="tag" x="150" y="492" text-anchor="middle">REATOR (RPV)</text>
 
-      <!-- ================= Pressurizador ================= -->
+      <!-- Pressurizador -->
       <rect class="vessel hot" x="250" y="120" width="42" height="95" rx="10"/>
       <g clip-path="url(#pzrClip)"><rect id="pzrFill" class="fill pzr" x="250" y="160" width="42" height="55"/></g>
       <path class="heater" d="M256,206 h30 M256,210 h30"/>
       <text class="tag" x="271" y="114" text-anchor="middle">PZR</text>
-      <!-- ADS -->
       <g id="ads" class="node"><path d="M264,86 l14,0 -7,10 z M264,106 l14,0 -7,-10 z"/></g>
       <text class="tag" x="288" y="96" text-anchor="start">ADS</text>
 
-      <!-- ================= Bombas RCP ================= -->
+      <!-- Bombas RCP -->
       <g id="rcp1" class="pump"><use href="#pumpSym" x="236" y="290"/></g>
       <g id="rcp2" class="pump"><use href="#pumpSym" x="236" y="332"/></g>
       <g id="rcp3" class="pump"><use href="#pumpSym" x="236" y="470"/></g>
       <g id="rcp4" class="pump"><use href="#pumpSym" x="236" y="428"/></g>
-      <text class="tag" x="292" y="452" text-anchor="middle">4× RCP</text>
+      <text class="tag" x="300" y="400" text-anchor="middle">4× RCP</text>
 
-      <!-- ================= Geradores de Vapor ================= -->
-      <path class="vessel" d="M350,150 h110 v110 q0,22 -22,22 h-66 q-22,0 -22,-22 z"/>
-      <g clip-path="url(#sg1Clip)"><rect id="sg1Fill" class="fill steam" x="350" y="200" width="110" height="82"/></g>
-      <path class="utube" d="M368,164 v96 M386,164 v96 M404,164 v96 M422,164 v96 M440,164 v96"/>
-      <path class="utube" d="M368,260 q9,12 18,0 M404,260 q9,12 18,0"/>
-      <path class="vessel nofill" d="M350,150 h110 v110 q0,22 -22,22 h-66 q-22,0 -22,-22 z"/>
-      <text class="tag" x="405" y="144" text-anchor="middle">Gerador de Vapor 1</text>
+      <!-- Geradores de Vapor -->
+      <path class="vessel" d="M430,150 h130 v110 q0,22 -22,22 h-86 q-22,0 -22,-22 z"/>
+      <g clip-path="url(#sg1Clip)"><rect id="sg1Fill" class="fill steam" x="430" y="200" width="130" height="82"/></g>
+      <path class="utube" d="M450,164 v96 M472,164 v96 M494,164 v96 M516,164 v96 M538,164 v96"/>
+      <path class="utube" d="M450,260 q11,13 22,0 M494,260 q11,13 22,0"/>
+      <path class="vessel nofill" d="M430,150 h130 v110 q0,22 -22,22 h-86 q-22,0 -22,-22 z"/>
+      <text class="tag" x="495" y="144" text-anchor="middle">Gerador de Vapor 1</text>
 
-      <path class="vessel" d="M350,392 h110 v110 q0,22 -22,22 h-66 q-22,0 -22,-22 z"/>
-      <g clip-path="url(#sg2Clip)"><rect id="sg2Fill" class="fill steam" x="350" y="442" width="110" height="82"/></g>
-      <path class="utube" d="M368,406 v96 M386,406 v96 M404,406 v96 M422,406 v96 M440,406 v96"/>
-      <path class="utube" d="M368,502 q9,12 18,0 M404,502 q9,12 18,0"/>
-      <path class="vessel nofill" d="M350,392 h110 v110 q0,22 -22,22 h-66 q-22,0 -22,-22 z"/>
-      <text class="tag" x="405" y="386" text-anchor="middle">Gerador de Vapor 2</text>
+      <path class="vessel" d="M430,392 h130 v110 q0,22 -22,22 h-86 q-22,0 -22,-22 z"/>
+      <g clip-path="url(#sg2Clip)"><rect id="sg2Fill" class="fill steam" x="430" y="442" width="130" height="82"/></g>
+      <path class="utube" d="M450,406 v96 M472,406 v96 M494,406 v96 M516,406 v96 M538,406 v96"/>
+      <path class="utube" d="M450,502 q11,13 22,0 M494,502 q11,13 22,0"/>
+      <path class="vessel nofill" d="M430,392 h130 v110 q0,22 -22,22 h-86 q-22,0 -22,-22 z"/>
+      <text class="tag" x="495" y="386" text-anchor="middle">Gerador de Vapor 2</text>
 
-      <!-- ================= Turbina / Gerador ================= -->
-      <polygon id="turbine" class="turbine" points="700,118 748,102 748,188 700,172"/>
-      <polygon class="turbine" points="750,108 792,94 792,196 750,182"/>
-      <circle id="gen" class="gen" cx="828" cy="145" r="21"/>
-      <text class="gtext" x="828" y="151" text-anchor="middle">G</text>
-      <line class="pipe cold" x1="792" y1="145" x2="807" y2="145"/>
-      <text class="tag" x="746" y="90" text-anchor="middle">Turbina / Gerador</text>
+      <!-- Turbina / Gerador (fora da contenção) -->
+      <polygon id="turbine" class="turbine" points="880,118 928,102 928,188 880,172"/>
+      <polygon class="turbine" points="930,108 972,94 972,196 930,182"/>
+      <circle id="gen" class="gen" cx="1030" cy="145" r="21"/>
+      <text class="gtext" x="1030" y="151" text-anchor="middle">G</text>
+      <line class="pipe cold" x1="972" y1="145" x2="1009" y2="145"/>
+      <text class="tag" x="926" y="90" text-anchor="middle">Turbina / Gerador</text>
 
-      <!-- Condensador -->
-      <rect class="vessel" x="700" y="272" width="92" height="44" rx="4"/>
-      <path class="cond" d="M708,286 h76 M708,294 h76 M708,302 h76"/>
-      <text class="tag" x="746" y="266" text-anchor="middle">Condensador</text>
-      <line class="pipe steam" x1="746" y1="196" x2="746" y2="272"/>
+      <rect class="vessel" x="880" y="272" width="100" height="44" rx="4"/>
+      <path class="cond" d="M888,286 h84 M888,294 h84 M888,302 h84"/>
+      <text class="tag" x="930" y="266" text-anchor="middle">Condensador</text>
+      <line class="pipe steam" x1="926" y1="196" x2="926" y2="272"/>
 
-      <!-- ================= Segurança passiva (PXS) ================= -->
+      <!-- Segurança passiva (PXS) -->
       <text class="zone" x="57" y="104" text-anchor="middle">PXS</text>
       <g id="cmt" class="node"><rect x="40" y="120" width="34" height="40" rx="3"/></g>
       <text class="tag" x="57" y="115" text-anchor="middle">CMT</text>
@@ -120,6 +119,7 @@
     <div class="card">
       <h3>Núcleo &amp; reatividade</h3>
       <div class="readings-grid">
+        <div class="rk">Período do reator</div><div class="rv" data-r="reactor_period_s">--</div>
         <div class="rk">Reatividade total</div><div class="rv" data-r="reactivity_pcm">--</div>
         <div class="rk">Reativ. Xenônio</div><div class="rv" data-r="xenon_worth_pcm">--</div>
         <div class="rk">Xe-135 / I-135</div><div class="rv" id="r-xei">--</div>
@@ -127,7 +127,6 @@
         <div class="rk">Veneno queimável</div><div class="rv" data-r="burnable_poison_pct">--</div>
         <div class="rk">Burnup do ciclo</div><div class="rv" data-r="burnup_pct">--</div>
         <div class="rk">Barras (retirada)</div><div class="rv" data-r="rod_position_pct">--</div>
-        <div class="rk">Calor decaimento</div><div class="rv" data-r="decay_heat_pct">--</div>
       </div>
     </div>
     <div class="card">
@@ -147,9 +146,17 @@
   </div>
 </section>
 
+<section class="eventbar">
+  <div class="card">
+    <h3>Registro de eventos — o que aconteceu (também no console do navegador, F12)</h3>
+    <div class="eventlog" id="eventlog"><div class="ev info"><span class="t">--</span>aguardando eventos…</div></div>
+  </div>
+</section>
+
 <section class="controls-deck">
   <div class="card panel-primary">
     <h3>■ Painel do Primário &amp; Reator</h3>
+    <p class="hint" id="mode-hint">Modo: --</p>
     <div id="ctl-primary"></div>
   </div>
   <div class="card panel-secondary">
@@ -158,6 +165,16 @@
   </div>
   <div class="card panel-sim">
     <h3>■ Simulação &amp; Malfunções</h3>
+    <div class="ctl-group">
+      <h4>Cenário inicial (recarrega a planta)</h4>
+      <div class="coils" id="scenario-btns"></div>
+      <p class="hint">"Operando 100%" já vem sob controle <b>AUTOMÁTICO</b> (planta em potência). Os cenários de <b>partida</b> (parada quente, frio, 1ª partida) iniciam em <b>MANUAL</b> — e ao tripar, sempre cai para MANUAL. Nada é facilitado: partida a frio exige ligar bombas + aquecedor, pressurizar e aquecer (~90 min, ou acelere o tempo), rearmar, diluir o boro e retirar barras devagar observando o Período.</p>
+    </div>
+    <div class="ctl-group">
+      <h4>Repartida do reator (após SCRAM)</h4>
+      <div class="coils"><button class="btn" onclick="restart()">▶ Rearmar reator (reset do trip)</button></div>
+      <p class="hint">Ao <b>tripar, o controle vai para MANUAL</b> — a repartida é na mão, como num reator real. Sequência: (1) rearme (desliga SCRAM + reset); (2) ligue o <b>aquecedor do PZR</b> p/ segurar a pressão; (3) mantenha a <b>válvula da turbina baixa</b> (senão super-resfria e cai a pressão); (4) retire as <b>barras devagar</b> observando o <b>Período</b> — se ficar curto (&lt;25 s), pare. Reabilite o AUTO só quando estável.</p>
+    </div>
     <div class="ctl-group">
       <h4>Escala de tempo (acelera venenos/Xenônio)</h4>
       <div class="coils" id="timescale-btns"></div>

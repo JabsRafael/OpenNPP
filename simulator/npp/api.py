@@ -106,6 +106,8 @@ def make_handler(engine):
                     engine.set_time_scale(value)
                 elif kind == "loca":
                     engine.set_loca(value)
+                elif kind == "scenario":
+                    engine.set_scenario(value)
                 else:
                     raise ValueError("kind invalido")
                 self._send(200, json.dumps({"ok": True}).encode())

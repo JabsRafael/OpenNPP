@@ -1,12 +1,12 @@
 # Mapa de I/O Modbus — referência
 
-Fonte única de verdade: `simulator/npp/iomap.py`. **Gerado automaticamente** do código.
+Fonte única de verdade: `simulator/npp/iomap.py`. **Gerado do código.**
 
-Codificação: `valor_engenharia = raw / escala`. Registradores de 16 bits; pontos com sinal usam complemento de dois.
+Codificação: `valor_eng = raw / escala`. 16 bits; pontos com sinal em complemento de dois.
 
-> A planta é SIMULADA — estes registradores não controlam hardware real.
+> Planta SIMULADA — estes registradores não controlam hardware real.
 
-## Input Registers — sensores (FC4, leitura)
+## Input Registers — sensores (FC4)
 
 | Addr | Chave | Rótulo | Sistema | Unid. | Escala | Sinal |
 |---|---|---|---|---|---|---|
@@ -51,9 +51,9 @@ Codificação: `valor_engenharia = raw / escala`. Registradores de 16 bits; pont
 | 38 | `burnable_poison_pct` | Veneno queimavel restante | nucleo | % | ×10 | — |
 | 39 | `burnup_pct` | Burnup do ciclo | nucleo | % | ×10 | — |
 | 40 | `primary_inventory_pct` | Inventario primario | primario | % | ×10 | — |
+| 41 | `reactor_period_s` | Periodo do reator | nucleo | s | ×1 | sim |
 
-## Discrete Inputs — status/alarmes (FC2, leitura)
-
+## Discrete Inputs — status/alarmes (FC2)
 | Addr | Chave | Rótulo | Sistema |
 |---|---|---|---|
 | 0 | `reactor_tripped` | SCRAM ativo | nucleo |
@@ -84,8 +84,7 @@ Codificação: `valor_engenharia = raw / escala`. Registradores de 16 bits; pont
 | 25 | `sg2_relief_open` | Alivio GV2 aberto | gv2 |
 | 26 | `safety_blocked` | Salvaguardas bloqueadas | pxs |
 
-## Coils — comandos digitais (FC1/5/15, escrita)
-
+## Coils — comandos (FC1/5/15)
 | Addr | Chave | Rótulo | Sistema |
 |---|---|---|---|
 | 0 | `cmd_manual_scram` | SCRAM manual | nucleo |
@@ -106,7 +105,7 @@ Codificação: `valor_engenharia = raw / escala`. Registradores de 16 bits; pont
 | 15 | `cmd_manual_ads` | ADS manual | pxs |
 | 16 | `cmd_block_safety` | Bloqueia salvaguardas | pxs |
 
-## Holding Registers — setpoints/demandas (FC3/6/16, escrita)
+## Holding Registers — setpoints/demandas (FC3/6/16)
 
 | Addr | Chave | Rótulo | Sistema | Unid. | Escala | Faixa |
 |---|---|---|---|---|---|---|
@@ -124,14 +123,9 @@ Codificação: `valor_engenharia = raw / escala`. Registradores de 16 bits; pont
 | 11 | `dmd_sg2_feed_valve_pct` | Valvula agua alim. GV2 | gv2 | % | ×10 | 0–100 |
 
 ---
+### Meta-simulação (via API HTTP, fora do Modbus)
 
-### Controles fora do Modbus (meta-simulação, via API HTTP)
-
-Não são pontos de processo — não integram a superfície de ataque OT:
-
-- `escala de tempo` (`POST /api/command {kind:"timescale"}`) — acelera só a evolução de venenos/burnup.
-- `LOCA` (`POST /api/command {kind:"loca", value:0..1}`) — insere rompimento no primário.
+`POST /api/command` com `kind`: `timescale` (escala de tempo), `loca` (0–1), `scenario` (at_power|hot_standby|cold_shutdown|first_startup).
 
 ### Contagem
-
-- Input Registers: **41** · Discrete Inputs: **27** · Coils: **17** · Holding Registers: **12**
+- IR: **42** · DI: **27** · Coils: **17** · HR: **12**

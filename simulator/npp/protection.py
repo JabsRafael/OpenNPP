@@ -34,6 +34,7 @@ def evaluate(plant, cmd):
         "hi_cont_press": saf.cont_press >= C.TRIP_HI_CONT_PRESS,
         "manual":        bool(cmd.get("cmd_manual_scram")),
     }
+    plant._trip_causes = [k for k, v in trip_causes.items() if v]  # p/ registro de eventos
     if any(trip_causes.values()) and not bus.tripped:
         bus.tripped = True
         bus.turbine_tripped = True                 # turbina segue o reator
@@ -46,8 +47,14 @@ def evaluate(plant, cmd):
         bus.turbine_tripped = False
 
     # ============================ ESFAS — salvaguardas ======================
+    # Permissivo P-11: a injecao de seguranca por baixa pressao so' fica ARMADA
+    # depois que a planta esteve pressurizada. Evita atuacao espuria durante a
+    # partida/parada a frio (quando a pressao e' naturalmente baixa).
+    if prim.przr_press >= C.ESFAS_ARM_PRESS:
+        plant.esfas_armed = True
     blocked = bool(cmd.get("cmd_block_safety"))
-    s_signal = (prim.przr_press <= C.ESFAS_LO_PRZR_PRESS
+    lo_press_s = plant.esfas_armed and prim.przr_press <= C.ESFAS_LO_PRZR_PRESS
+    s_signal = (lo_press_s
                 or saf.cont_press >= C.ESFAS_HI_CONT_PRESS
                 or bool(cmd.get("cmd_manual_si")))
     lo_sg = min(sg[0].level, sg[1].level) <= C.ESFAS_LO_SG_LEVEL

@@ -33,6 +33,7 @@ class SimEngine:
         self.time_scale = C.TIME_SCALE_DEFAULT
         self.loca_size = 0.0         # 0..1 area de rompimento (LOCA)
         self.running = True
+        self._was_tripped = False
 
         self.slave = ModbusSlaveContext(
             di=ModbusSequentialDataBlock(0, [0] * len(DISCRETE_INPUTS)),
@@ -42,23 +43,44 @@ class SimEngine:
             zero_mode=True,
         )
         self.context = ModbusServerContext(slaves=self.slave, single=True)
-        self._init_defaults()
+        self.set_scenario("at_power")   # boot em MANUAL (auto e' opt-in)
 
-    def _init_defaults(self):
-        hr_defaults = {
-            "sp_power_pct": 100.0, "dmd_rod_pct": C.ROD_POS_REF,
-            "dmd_rcp_speed_pct": 100.0, "sp_przr_pressure_bar": C.PRZR_PRESS_NOMINAL,
-            "sp_przr_level_pct": C.PRZR_LEVEL_NOMINAL, "sp_boron_ppm": C.BORON_REF,
-            "dmd_turbine_valve_pct": 100.0, "dmd_turbine_load_mwe": C.RATED_MWE,
-            "sp_sg1_level_pct": C.SG_LEVEL_NOMINAL, "dmd_sg1_feed_valve_pct": 100.0,
-            "sp_sg2_level_pct": C.SG_LEVEL_NOMINAL, "dmd_sg2_feed_valve_pct": 100.0,
-        }
-        for key, val in hr_defaults.items():
-            p = HR_BY_KEY[key]
-            self.slave.setValues(FC_HR, p.addr, [encode(val, p)])
-        for key in ("cmd_rcp1_start", "cmd_rcp2_start", "cmd_rcp3_start",
-                    "cmd_rcp4_start", "cmd_feed_pump_start", "cmd_auto_control"):
-            self.slave.setValues(FC_COIL, CO_BY_KEY[key].addr, [1])
+    SCENARIOS = ("at_power", "hot_standby", "cold_shutdown", "first_startup")
+
+    def set_scenario(self, name):
+        if name not in self.SCENARIOS:
+            raise ValueError(f"cenario invalido: {name}")
+        with self.lock:
+            p = self.plant
+            p.load_scenario(name)
+            self.scenario = name
+            self.t = 0.0
+            self.reactor_seconds = 0.0
+            self.loca_size = 0.0
+            self._was_tripped = p.bus.tripped
+            at_power = p.core.n > 0.5
+            hr = {
+                "sp_power_pct": 100.0, "dmd_rod_pct": p.core.rod_pos,
+                "dmd_rcp_speed_pct": 100.0, "sp_przr_pressure_bar": 155.0,
+                "sp_przr_level_pct": 55.0, "sp_boron_ppm": p.primary.boron,
+                "dmd_turbine_valve_pct": round(p.core.n * 100.0, 1), "dmd_turbine_load_mwe": C.RATED_MWE,
+                "sp_sg1_level_pct": 55.0, "dmd_sg1_feed_valve_pct": (100.0 if at_power else 0.0),
+                "sp_sg2_level_pct": 55.0, "dmd_sg2_feed_valve_pct": (100.0 if at_power else 0.0),
+            }
+            for key, val in hr.items():
+                pt = HR_BY_KEY[key]
+                self.slave.setValues(FC_HR, pt.addr, [encode(val, pt)])
+            for pt in COILS:                       # tudo desligado (AUTO opt-in)
+                self.slave.setValues(FC_COIL, pt.addr, [0])
+            for i, key in enumerate(("cmd_rcp1_start", "cmd_rcp2_start",
+                                     "cmd_rcp3_start", "cmd_rcp4_start")):
+                self.slave.setValues(FC_COIL, CO_BY_KEY[key].addr,
+                                     [1 if p.primary.rcp_running[i] else 0])
+            if at_power:
+                # planta operando esta' sob controle AUTOMATICO (realista); os
+                # cenarios de PARTIDA (frio/parada quente) iniciam em MANUAL.
+                self.slave.setValues(FC_COIL, CO_BY_KEY["cmd_feed_pump_start"].addr, [1])
+                self.slave.setValues(FC_COIL, CO_BY_KEY["cmd_auto_control"].addr, [1])
 
     def step_once(self, dt=C.DT):
         with self.lock:
@@ -69,6 +91,14 @@ class SimEngine:
             auto = cmd["cmd_auto_control"]
 
             di = self.plant.step(dt, cmd, sp, auto, self.time_scale, self.loca_size)
+            # reset de trip e' momentaneo: consome o comando para nao ficar latchado
+            if cmd["cmd_reset_trip"]:
+                self.slave.setValues(FC_COIL, CO_BY_KEY["cmd_reset_trip"].addr, [0])
+            # AO TRIPAR -> transfere para MANUAL: a repartida e' feita na mao, com
+            # todas as dificuldades reais (imita um reator de verdade).
+            if di["reactor_tripped"] and not self._was_tripped:
+                self.slave.setValues(FC_COIL, CO_BY_KEY["cmd_auto_control"].addr, [0])
+            self._was_tripped = di["reactor_tripped"]
 
             # devolve demandas calculadas pelo controle auto aos HR (p/ HMI)
             if auto and self.plant._auto_out is not None:
@@ -102,6 +132,8 @@ class SimEngine:
             "rh": round(self.reactor_seconds / 3600.0, 3),   # relogio do reator (h)
             "ts": self.time_scale,
             "loca": round(self.loca_size, 2),
+            "scenario": self.scenario,
+            "events": list(self.plant.events),
             "ir": {p.key: round(decode(ir[p.addr], p), 2) for p in INPUT_REGISTERS},
             "di": {p.key: bool(di[p.addr]) for p in DISCRETE_INPUTS},
             "co": {p.key: bool(co[p.addr]) for p in COILS},

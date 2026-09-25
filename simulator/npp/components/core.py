@@ -32,9 +32,9 @@ class ReactorCore:
     def move_rods(self, demand, dt, tripped):
         """Movimento das barras com limite de taxa; SCRAM = queda rapida."""
         if tripped:
-            demand, rate = 0.0, 30.0
+            demand, rate = 0.0, C.ROD_SPEED_SCRAM
         else:
-            rate = 2.0
+            rate = C.ROD_SPEED
         demand = max(0.0, min(100.0, demand))
         step = rate * dt
         if self.rod_pos < demand:

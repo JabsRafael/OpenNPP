@@ -148,3 +148,34 @@ Um **operador legítimo** clicando num botão e um **atacante Modbus** escrevend
 no mesmo coil/holding register têm **efeito idêntico** sobre o processo: não há
 autenticação e a HMI não é um controle de acesso. Isso é intencional — serve
 para exercícios de detecção e resposta. Ver `docs/07` para os cenários de ataque.
+
+## 5. Operação: cenários, modos e repartida
+
+O simulador imita um reator real — **nada é facilitado**.
+
+### Cenários iniciais (painel Simulação → "Cenário inicial")
+Recarregam a planta numa condição de partida realista:
+
+| Cenário | Estado | Modo | Dificuldade |
+|---|---|---|---|
+| **Operando 100%** | Em potência, quente, crítico | **AUTO** | operar/atacar a partir de potência |
+| **Parada quente** | Subcrítico, barras dentro, ~290 °C, pressurizado | MANUAL | rearmar e subir barras |
+| **Desligado a frio** | ~50 °C, 28 bar, boro ~1900 ppm, bombas off | MANUAL | aquecer + pressurizar + partida completa |
+| **1ª partida pós-manut.** | Frio, núcleo novo (sem Xe/Sm), boro ~2100 ppm | MANUAL | a partida mais difícil |
+
+### Modo AUTO × MANUAL (AUTO é opt-in)
+- "Operando 100%" já vem em **AUTO** (planta em potência é controlada automaticamente).
+- Cenários de **partida** iniciam em **MANUAL**. **Ao tripar, a planta sempre cai para MANUAL** — a repartida é na mão.
+- Em MANUAL os sliders de demanda (barras, bombas, válvulas) ficam ativos; em AUTO ficam travados (use o **Setpoint de potência**).
+
+### Procedimento de repartida (MANUAL, após SCRAM ou a frio)
+1. **Rearmar** (botão) — desliga o SCRAM e dá reset (só limpa com as condições normais; pressione o aquecedor antes se a pressão estiver baixa).
+2. **Aquecedor do PZR** ligado para segurar/subir a pressão (a frio: bombas + aquecedor aquecem e pressurizam ~90 min; acelere o tempo se quiser).
+3. **Válvula da turbina baixa** até haver potência (senão super-resfria e a pressão cai → trip).
+4. **Diluir o boro** (a frio) e **retirar as barras devagar** observando o **Período** no cabeçalho — se ficar curto (&lt;25 s), pare de retirar. Só reabilite o AUTO quando estável.
+
+### Período do reator
+Cabeçalho e painel "Núcleo & reatividade": tempo de e-folding da potência. "estável" em regime; positivo curto = subindo rápido (perigo de exceder o período — pare de retirar barras); negativo = descendo.
+
+### Registro de eventos
+A faixa **"Registro de eventos"** (e o **console do navegador, F12**) mostram o que aconteceu com a causa: `SCRAM — causa: …`, `ESFAS atuado`, `CMT injetando`, `ADS atuado`, `Salvaguardas BLOQUEADAS`, `LOCA iniciado`, `Controle transferido para MANUAL`, etc. É o guia para entender cada transiente.

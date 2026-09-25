@@ -7,6 +7,10 @@ const SYS_LABELS = {
 const PRIMARY_SYS = ["nucleo", "primario", "pxs"];
 const SECONDARY_SYS = ["gv1", "gv2", "turbina"];
 const TIMESCALES = [1, 10, 60, 300, 720, 3600];
+const SCENARIOS = [
+  { k: "at_power", label: "Operando 100%" }, { k: "hot_standby", label: "Parada quente" },
+  { k: "cold_shutdown", label: "Desligado a frio" }, { k: "first_startup", label: "1ª partida pós-manut." },
+];
 const NS = "http://www.w3.org/2000/svg";
 
 // chips de leitura posicionados ao lado de cada componente do P&ID
@@ -22,14 +26,31 @@ const CHIP_LABEL = {
 const CHIPS = [
   { x: 34, y: 500, k: "reactor_power_pct", big: 1 }, { x: 126, y: 500, k: "fuel_temp_c" },
   { x: 34, y: 540, k: "rod_position_pct" }, { x: 126, y: 540, k: "primary_inventory_pct" },
-  { x: 196, y: 352, k: "coolant_tavg_c", sm: 1 }, { x: 302, y: 300, k: "coolant_thot_c", sm: 1 },
+  { x: 196, y: 352, k: "coolant_tavg_c", sm: 1 }, { x: 322, y: 300, k: "coolant_thot_c", sm: 1 },
   { x: 120, y: 92, k: "przr_pressure_bar" }, { x: 120, y: 124, k: "przr_level_pct" },
-  { x: 478, y: 164, k: "sg1_level_pct" }, { x: 478, y: 196, k: "sg1_pressure_bar" }, { x: 478, y: 228, k: "sg1_steam_flow_kgs" },
-  { x: 478, y: 404, k: "sg2_level_pct" }, { x: 478, y: 436, k: "sg2_pressure_bar" }, { x: 478, y: 468, k: "sg2_steam_flow_kgs" },
-  { x: 686, y: 208, k: "gen_power_mwe", big: 1 }, { x: 686, y: 248, k: "turbine_rpm" },
+  { x: 578, y: 164, k: "sg1_level_pct" }, { x: 578, y: 196, k: "sg1_pressure_bar" }, { x: 578, y: 228, k: "sg1_steam_flow_kgs" },
+  { x: 578, y: 404, k: "sg2_level_pct" }, { x: 578, y: 436, k: "sg2_pressure_bar" }, { x: 578, y: 468, k: "sg2_steam_flow_kgs" },
+  { x: 866, y: 208, k: "gen_power_mwe", big: 1 }, { x: 866, y: 248, k: "turbine_rpm" },
   { x: 28, y: 164, k: "cmt1_level_pct", sm: 1 }, { x: 28, y: 256, k: "accum_press_bar", sm: 1 }, { x: 28, y: 352, k: "prhr_flow_pct", sm: 1 },
-  { x: 516, y: 72, k: "containment_press_bar", sm: 1 }, { x: 576, y: 72, k: "containment_rad_msvh", sm: 1 },
+  { x: 620, y: 72, k: "containment_press_bar", sm: 1 }, { x: 684, y: 72, k: "containment_rad_msvh", sm: 1 },
 ];
+// sliders de demanda manual — travados no modo AUTO
+const MANUAL_KEYS = ["dmd_rod_pct", "dmd_rcp_speed_pct", "dmd_turbine_valve_pct", "dmd_sg1_feed_valve_pct", "dmd_sg2_feed_valve_pct"];
+const fmtPeriod = v => Math.abs(v) >= 999 ? "estável" : `${v > 0 ? "+" : ""}${Math.round(v)} s`;
+const fmtT = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
+let LAST_EV = 0;
+function updateEvents(evs) {
+  if (!evs) return;
+  evs.forEach(e => {
+    if (e.id > LAST_EV) {
+      LAST_EV = e.id;
+      const tag = e.lvl === "trip" ? "🔴" : e.lvl === "warn" ? "🟠" : "🔵";
+      console.log(`${tag} [OpenNPP ${fmtT(e.t)}] ${e.msg}`);
+    }
+  });
+  document.getElementById("eventlog").innerHTML = evs.slice().reverse()
+    .map(e => `<div class="ev ${e.lvl}"><span class="t">${fmtT(e.t)}</span>${e.msg}</div>`).join("");
+}
 // vasos com nível de água animado: [id, chave, yCheio, yVazio]
 const FILLS = [
   ["rpvFill", "primary_inventory_pct", 305, 470], ["pzrFill", "przr_level_pct", 126, 213],
@@ -56,6 +77,7 @@ async function init() {
   buildAlarms();
   buildControls();
   buildTimescale();
+  buildScenarios();
   const lr = document.getElementById("loca-range");
   lr.oninput = e => document.getElementById("loca-val").textContent = e.target.value + " %";
   lr.onchange = e => setLoca(+e.target.value);
@@ -131,6 +153,16 @@ function buildControls() {
   }
 }
 
+function buildScenarios() {
+  const box = document.getElementById("scenario-btns");
+  SCENARIOS.forEach(s => {
+    const b = document.createElement("button");
+    b.className = "btn"; b.id = "scn-" + s.k; b.textContent = s.label;
+    b.onclick = () => { if (confirm(`Recarregar a planta no cenário "${s.label}"? O estado atual será perdido.`)) cmd("scenario", null, s.k); };
+    box.appendChild(b);
+  });
+}
+
 function buildTimescale() {
   const box = document.getElementById("timescale-btns");
   TIMESCALES.forEach(ts => {
@@ -150,6 +182,9 @@ function setLoca(pct) {
   cmd("loca", null, pct / 100);
 }
 window.setLoca = setLoca;
+// repartida após SCRAM: desliga o SCRAM e dá reset no trip (reset é momentâneo)
+function restart() { cmd("coil", "cmd_manual_scram", 0); cmd("coil", "cmd_reset_trip", 1); }
+window.restart = restart;
 
 /* -------- stream -------- */
 let lastState = null;
@@ -177,6 +212,9 @@ function update(st) {
 
   document.getElementById("s-power").textContent = fmt(ir.reactor_power_pct, "%");
   document.getElementById("s-mwe").textContent = fmt(ir.gen_power_mwe, "MWe");
+  const sp = document.getElementById("s-period");
+  sp.textContent = fmtPeriod(ir.reactor_period_s);
+  sp.style.color = (ir.reactor_period_s > 0 && ir.reactor_period_s < 30) ? "var(--warn)" : "";
   document.getElementById("s-tavg").textContent = fmt(ir.coolant_tavg_c, "°C");
   document.getElementById("s-przr").textContent = fmt(ir.przr_pressure_bar, "bar");
   document.getElementById("s-clock").textContent = st.rh < 1 ? `${(st.rh * 60).toFixed(0)} min` : `${st.rh.toFixed(1)} h`;
@@ -194,7 +232,8 @@ function update(st) {
   });
   document.querySelectorAll("[data-r]").forEach(el => {
     const k = el.getAttribute("data-r");
-    el.textContent = IR[k].unit === "pcm" ? fmtSigned(ir[k]) : fmt(ir[k], IR[k].unit);
+    el.textContent = k === "reactor_period_s" ? fmtPeriod(ir[k])
+      : (IR[k].unit === "pcm" ? fmtSigned(ir[k]) : fmt(ir[k], IR[k].unit));
   });
   document.getElementById("r-xei").textContent = `${ir.xenon_pct.toFixed(0)}% / ${ir.iodine_pct.toFixed(0)}%`;
 
@@ -214,7 +253,7 @@ function update(st) {
   const flow = ir.rcp_flow_pct > 5;
   ["hot1", "hot2", "cold1", "cold2"].forEach(p => setFlow(p, flow));
   setFlow("steam1", ir.sg1_steam_flow_kgs > 10); setFlow("steam2", ir.sg2_steam_flow_kgs > 10);
-  setFlow("feed", di.feedwater_running);
+  setFlow("feed", di.feedwater_running); setFlow("feed2", di.feedwater_running);
 
   META.di.forEach(p => { const r = document.getElementById("di-" + p.key); if (r) r.classList.toggle("on", di[p.key]); });
   META.co.forEach(p => { const b = document.getElementById("co-" + p.key); if (b) b.classList.toggle("on", co[p.key]); });
@@ -222,8 +261,21 @@ function update(st) {
     const r = document.getElementById("hr-" + p.key), n = document.getElementById("hrv-" + p.key);
     if (r && document.activeElement !== r) { r.value = hr[p.key]; n.textContent = fmt(hr[p.key], p.unit); }
   });
-  TIMESCALES.forEach(ts => setCls("ts-" + ts, "on", st.ts === ts));
 
+  // modo AUTO x MANUAL: trava sliders de demanda manual em AUTO
+  const auto = co.cmd_auto_control;
+  const mh = document.getElementById("mode-hint");
+  mh.textContent = auto ? "Modo: AUTOMÁTICO — ajuste pelo Setpoint de potência (demandas manuais travadas)"
+    : "Modo: MANUAL — você comanda barras e válvulas diretamente";
+  mh.classList.toggle("mode-auto", auto);
+  MANUAL_KEYS.forEach(k => {
+    const r = document.getElementById("hr-" + k);
+    if (r) { r.disabled = auto; const s = r.closest(".slider"); if (s) s.classList.toggle("locked", auto); }
+  });
+  TIMESCALES.forEach(ts => setCls("ts-" + ts, "on", st.ts === ts));
+  SCENARIOS.forEach(s => setCls("scn-" + s.k, "on", st.scenario === s.k));
+
+  updateEvents(st.events);
   pushHist(ir);
 }
 

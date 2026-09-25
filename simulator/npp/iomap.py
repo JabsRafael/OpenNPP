@@ -86,6 +86,8 @@ INPUT_REGISTERS = [
     Point(39, "burnup_pct",        "Burnup do ciclo",         "%",    10.0, hi=100, system="nucleo"),
     # -- inventario do primario (LOCA)
     Point(40, "primary_inventory_pct","Inventario primario",  "%",    10.0, hi=100, system="primario"),
+    # -- periodo do reator (feedback de taxa)
+    Point(41, "reactor_period_s",  "Periodo do reator",       "s",     1.0, signed=True, lo=-999, hi=999, system="nucleo"),
 ]
 
 # --------------------------------------------------------------- DISCRETE INPUTS

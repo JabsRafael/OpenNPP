@@ -41,12 +41,19 @@ class PrimarySystem:
             self.boron -= 2.0 * dt
         self.boron = max(0.0, min(3500.0, self.boron))
 
-    def apply_pressurizer(self, heater, spray, dt, dTavg):
+    def apply_pressurizer(self, heater, spray, dt, dTavg, przr_sp=None, auto=False):
         dP = C.PRZR_THERMAL_EXP * dTavg
-        if heater:
-            dP += C.PRZR_HEATER_RATE * dt
-        if spray:
-            dP -= C.PRZR_SPRAY_RATE * dt
+        if auto and przr_sp is not None:
+            # controle proporcional de pressao (segura o setpoint mesmo em baixa
+            # potencia) — modela a acao integral do sistema de controle real
+            eff = C.PRZR_CTRL_GAIN * (przr_sp - self.przr_press)
+            eff = max(-C.PRZR_CTRL_MAXRATE, min(C.PRZR_CTRL_MAXRATE, eff))
+            dP += eff * dt
+        else:
+            if heater:
+                dP += C.PRZR_HEATER_RATE * dt
+            if spray:
+                dP -= C.PRZR_SPRAY_RATE * dt
         self.przr_press += dP
         if self.przr_press >= C.PRZR_RELIEF_SETPOINT:
             self.przr_relief_open = True
@@ -73,7 +80,7 @@ class PrimarySystem:
         bus.cooling_factor = max(0.02, min(1.0, self.inventory / C.UNCOVERY_THRESHOLD))
 
     # -------------------------------------------------------------------- step
-    def step(self, bus, dt, heater, spray):
+    def step(self, bus, dt, heater, spray, przr_sp=None, auto=False):
         # ---- vazao das 4 RCPs (fracao da nominal, com inercia) -------------
         target = (self.running_count() / C.N_RCP) * self.rcp_speed
         self.flow += (target - self.flow) * min(1.0, dt / C.RCP_COASTDOWN_TAU)
@@ -81,8 +88,9 @@ class PrimarySystem:
         flow_frac = self.flow / 100.0
 
         # ---- balanco de energia do refrigerante ----------------------------
-        # entra Q_core; saem Q_sg_total (geradores de vapor) e Q_prhr (passivo)
-        net = bus.Q_core - bus.Q_sg_total - bus.Q_prhr
+        # entra Q_core + calor das bombas; saem Q_sg_total e Q_prhr (passivo)
+        Q_pump = self.running_count() * C.PUMP_HEAT_MW * (self.flow / 100.0)
+        net = bus.Q_core + Q_pump - bus.Q_sg_total - bus.Q_prhr
         dTavg = net / C.C_COOLANT * dt
         # injecao de seguranca resfria o primario (agua fria borada)
         if bus.si_flow > 0:
@@ -97,7 +105,7 @@ class PrimarySystem:
         T_cold = self.T_coolant - core_dt / 2.0
 
         # ---- pressurizador -------------------------------------------------
-        self.apply_pressurizer(heater, spray, dt, dTavg)
+        self.apply_pressurizer(heater, spray, dt, dTavg, przr_sp, auto)
         self.przr_level = C.PRZR_LEVEL_NOMINAL + 1.2 * (self.T_coolant - C.COOLANT_TEMP_REF)
         if bus.si_flow > 0:
             self.przr_level += bus.si_flow * 2e-3 * dt      # reposicao de inventario

@@ -27,8 +27,10 @@ class ControlSystem:
 
     def update(self, plant, sp, dt):
         power = plant.core.n * 100.0
-        rod_demand = self.rod.update(power, sp["sp_power_pct"], dt)
-        turbine_valve = self.turbine.update(sp["sp_power_pct"], dt)
+        rod_demand = self.rod.update(power, sp["sp_power_pct"], dt,
+                                     tripped=plant.bus.tripped, current_rod=plant.core.rod_pos,
+                                     period=plant.reactor_period)
+        turbine_valve = self.turbine.update(power, dt)   # turbina segue a potencia real
         heater, spray = self.pzr.update(plant.primary.przr_press, sp["sp_przr_pressure_bar"])
 
         fv1 = self.sg_level[0].update(plant.sg[0].level, plant.sg[0].steam_flow,

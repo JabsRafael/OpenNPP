@@ -22,8 +22,13 @@ GEN_TIME = 2.0e-5               # tempo de geracao de neutrons prontos (s)
 # Realimentacao de reatividade (Delta-k/k; 1 pcm = 1e-5). Todos negativos.
 ALPHA_DOPPLER = -2.5e-5   # /K de temp. combustivel   (-2.5 pcm/K)
 ALPHA_MOD = -1.5e-4       # /K de temp. refrigerante  (-15 pcm/K)
-ALPHA_BORON = -8.0e-6     # /ppm de boro              (-0.8 pcm/ppm)
+ALPHA_BORON = -1.0e-4     # /ppm de boro              (-10 pcm/ppm, worth realista)
 ROD_WORTH = 0.060         # valor total do banco de controle (6000 pcm)
+# Boro de referencia por condicao (a frio, denso, exige muito boro p/ subcritico)
+BORON_COLD_SHUTDOWN = 1900.0   # ppm — parada fria
+BORON_FRESH_CORE = 2100.0      # ppm — nucleo novo pos-recarga (mais reativo)
+ROD_SPEED = 1.0           # %/s de movimento normal das barras (limite de taxa)
+ROD_SPEED_SCRAM = 30.0    # %/s na queda por SCRAM (gravidade)
 
 FUEL_TEMP_REF = 900.0     # degC — combustivel a 100% nominal
 COOLANT_TEMP_REF = 305.0  # degC — Tavg nominal (~302 no AP1000)
@@ -49,13 +54,16 @@ CP_COOLANT = 5.5e-3       # calor especifico efetivo concentrado (MJ/(kg.K))
 N_RCP = 4                 # bombas de refrigerante do reator
 RCP_FLOW_NOMINAL = 20000.0  # kg/s totais (4 bombas) a 100%
 RCP_COASTDOWN_TAU = 6.0   # s — inercia de rotor (canned motor)
+PUMP_HEAT_MW = 5.0        # MW de calor por RCP ligada (aquece o primario a frio)
 
 # ------ Pressurizador
 PRZR_PRESS_NOMINAL = 155.0   # bar (15.5 MPa)
 PRZR_LEVEL_NOMINAL = 55.0    # %
-PRZR_HEATER_RATE = 1.2       # bar/s
-PRZR_SPRAY_RATE = 1.5        # bar/s
+PRZR_HEATER_RATE = 1.2       # bar/s (modo manual, bang-bang)
+PRZR_SPRAY_RATE = 1.5        # bar/s (modo manual, bang-bang)
 PRZR_THERMAL_EXP = 1.2       # bar por K de variacao de Tavg
+PRZR_CTRL_GAIN = 0.8         # /s — controle proporcional de pressao (modo auto)
+PRZR_CTRL_MAXRATE = 3.0      # bar/s — autoridade maxima do controle de pressao
 PRZR_RELIEF_SETPOINT = 172.0 # bar (valvula de alivio / PORV)
 PRZR_RELIEF_RESEAT = 165.0   # bar
 
@@ -106,6 +114,8 @@ TRIP_LO_FLOW = 40.0          # % vazao primaria
 TRIP_HI_CONT_PRESS = 3.5     # bar
 # --- ESFAS (Engineered Safety Features Actuation System) — salvaguardas
 ESFAS_LO_PRZR_PRESS = 120.0  # bar -> sinal "S" (safeguards): CMT + PRHR
+ESFAS_ARM_PRESS = 130.0      # bar -> permissivo P-11: arma a SI por baixa pressao
+                             # (evita atuacao espuria durante partida/parada a frio)
 ESFAS_HI_CONT_PRESS = 2.5    # bar -> isolamento / salvaguardas
 ESFAS_LO_SG_LEVEL = 15.0     # % -> PRHR
 
