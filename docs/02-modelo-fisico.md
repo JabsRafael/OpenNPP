@@ -119,7 +119,44 @@ decaimento** (~6,5% inicial) domina, caindo devagar. A potência térmica total 
   **CMT** e **acumuladores** injetam água borada; **ADS** despressuriza em 4
   estágios; **contenção** pressuriza/irradia se houver dano ao combustível.
 
-## 7. Validação (comportamento observado)
+## 7. Venenos e escala de tempo (`components/reactor_poisons.py`)
+
+Produtos de fissão que absorvem neutrons e inserem reatividade negativa. A
+dinâmica é lenta (horas a meses), integrada com passo acelerado
+`dt_acel = dt × escala_de_tempo` — assim dá para observar o Xenônio em minutos.
+
+Concentrações normalizadas (1,0 = equilíbrio a 100%); reatividade em **desvio** do
+equilíbrio (zero no início → preserva a criticalidade).
+
+- **Iodo-135 / Xenônio-135** (T½ 6,6 h / 9,1 h): estoque de iodo `I_eq = 2,3×` o
+  Xenônio → após o SCRAM o Xe **sobe** (o I continua decaindo mas a queima por
+  fluxo cessa), atinge **pico em ~9–11 h (≈147%, −1300 pcm)** e depois decai. Esse
+  "poço de iodo" pode **impedir a repartida** (xenon precluded start).
+- **Promécio-149 / Samário-149** (permanente): após desligar, o Sm sobe para um
+  novo equilíbrio e **fica** (não decai).
+- **Veneno queimável / burnup**: depleta muito devagar com o burnup do ciclo,
+  liberando reatividade positiva (compensada pelo controle de barras).
+
+**Escala de tempo** (`escala_de_tempo`, 1×–3600×): acelera **apenas** os venenos e
+o burnup, não a dinâmica rápida (potência/térmica). O relógio do reator (`rh`, em
+horas) avança na taxa acelerada. Ajustável pela HMI. Use 1× para transientes
+térmicos; alto para observar Xenônio.
+
+## 8. LOCA — perda de refrigerante (`primary.py`)
+
+Rompimento no primário (`loca_size` 0–1, via HMI): drena o **inventário** do RCS e
+despressuriza. Quando o inventário cai abaixo do limiar, o núcleo **descobre** e a
+transferência de calor combustível→refrigerante degrada (`bus.cooling_factor` → ~0),
+levando ao superaquecimento.
+
+Mitigação (Defense-in-Depth): a queda de pressão dispara o **ESFAS** → **CMT** e
+**PRHR** injetam; abaixo da pressão dos **acumuladores**, injeção rápida; o **ADS**
+despressuriza em estágios e o **IRWST** inunda. A injeção de segurança reenche o
+inventário. **Com as salvaguardas bloqueadas** (`cmd_block_safety`) nada disso
+atua → dano ao núcleo (combustível > 1200 °C) → radiação/pressão na contenção.
+Ver o playbook em `docs/07`.
+
+## 9. Validação (comportamento observado)
 
 Resultados do teste `plant.py` (passo 0,1 s, modo automático):
 
@@ -130,5 +167,8 @@ Resultados do teste `plant.py` (passo 0,1 s, modo automático):
 | SCRAM manual | P → decaimento em segundos; estabiliza em **parada quente ~287 °C** com alívio dos GVs removendo o calor residual |
 | Perda das 4 RCPs | Vazão cai → RPS desarma por baixa vazão; Thot dispara (consequência severa) |
 | 10 min pós-SCRAM | Planta estável ~287 °C, PZR 154 bar, decaimento 0,6% — sem divergência numérica |
+| Xenônio pós-SCRAM (720×) | Xe sobe a **147% em ~8 h** (−1300 pcm), depois decai — pico/poço de iodo correto |
+| LOCA 60% **com** salvaguardas | ESFAS→CMT/ADS; combustível cai (761→380 °C) — **mitigado** |
+| LOCA 60% **sem** salvaguardas | Núcleo descobre, combustível sobe continuamente → dano/radiação na contenção |
 
 Sem NaN/Inf em nenhum cenário. Detalhes de parâmetros: `simulator/npp/config.py`.

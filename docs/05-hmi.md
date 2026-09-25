@@ -10,41 +10,52 @@ Código-fonte: `simulator/web/index.html`, `simulator/web/app.js`,
 `simulator/npp/api.py`. A HMI é montada dinamicamente a partir de `/api/meta`
 (mesmos pontos do `iomap.py`).
 
-## 1. Layout da tela
+## 1. Layout da tela (estilo sala de controle)
+
+A tela imita uma sala de controle: **situação em cima**, **controles embaixo**.
 
 **Header (barra superior)** — indicadores ao vivo e badge de status:
 
-| Elemento | Campo (`ir.*`) | Observação |
+| Elemento | Origem | Observação |
 |---|---|---|
-| Potência | `reactor_power_pct` | potência térmica do reator (%) |
-| MW elétrico | `gen_power_mwe` | geração no gerador (MWe) |
-| Tavg | `coolant_tavg_c` | temperatura média do primário (°C) |
-| Pressão PZR | `przr_pressure_bar` | pressão do pressurizador (bar) |
-| Tempo sim | `st.t` | tempo de simulação em segundos |
+| Potência reator | `ir.reactor_power_pct` | potência térmica (%) |
+| Geração MWe | `ir.gen_power_mwe` | geração no gerador |
+| Tavg | `ir.coolant_tavg_c` | temperatura média do primário |
+| Pressão RCS | `ir.przr_pressure_bar` | pressão do primário/pressurizador |
+| Tempo reator | `st.rh` | relógio do reator (min/h, acelerado pela escala de tempo) |
+| Escala tempo | `st.ts` | fator de aceleração ativo (1×…3600×) |
 | Badge | derivado | `NORMAL` / `ALARME` / `SCRAM / TRIP` |
 
-O badge fica em `SCRAM / TRIP` quando `di.reactor_tripped`; em `ALARME` quando
-qualquer `di.alm_*` está ativo; senão `NORMAL`.
+**Painel de situação (topo)** — três blocos:
 
-**Mímico SVG da planta** — diagrama com: núcleo do **Reator**, **PZR**
-(pressurizador), **4× RCP** (bombas do primário `rcp1`..`rcp4`), **Gerador de
-Vapor 1/2** (GV1/GV2), **Turbina / Gerador** (nó `gen`), **Condensador** e o
-retângulo de **Contenção** (pressão/radiação no canto). Dentro da contenção está
-o grupo **PXS** de segurança passiva: **CMT**, **PRHR**, **ACUM** (acumulador) e
-**ADS**. As tubulações (`hot1/2`, `cold1/2`, `steam1/2`, `feed`) animam quando há
-fluxo.
+- **Mímico P&ID** (`svg.mimic`): diagrama com símbolos de processo:
+  - **RPV** (vaso de pressão) com **núcleo** hachurado e **barras de controle**
+    (`rod0..rod2`) que **inserem/retiram graficamente** conforme
+    `rod_position_pct` (ficam âmbar quando profundamente inseridas), CRDM no topo.
+  - **PZR** com serpentina de aquecedor, **4× RCP** (`rcp1..rcp4`, símbolo de
+    bomba), **GV1/GV2** (vaso com feixe em U), **Turbina** (símbolo de expansão) +
+    **Gerador** (`gen`), **Condensador** e a **Contenção** (pressão/radiação).
+  - **PXS** (segurança passiva): **CMT**, **ACUM**, **PRHR**, **ADS** — acendem
+    (verde) quando atuando. **Inventário RCS** (`primary_inventory_pct`) exibido.
+  - Tubulações (`hot1/2`, `cold1/2`, `steam1/2`, `feed`) animam quando há fluxo.
+- **Núcleo & reatividade**: tabela com reatividade total, **reativ. Xenônio**,
+  **Xe-135 / I-135**, **reativ. Samário**, veneno queimável, burnup, posição de
+  barras e calor de decaimento (`ir.*`).
+- **Alarmes & status** e **Tendências** (sparkline: potência %, MWe/12, Tavg,
+  **Xe %**; até 240 amostras).
 
-**Tendências** — sparkline (`canvas#spark`) com três séries: Potência do reator
-(%), Geração (MWe/12) e Tavg (°C). Histórico de até 240 amostras.
+**Painéis de controle (base)** — três colunas:
 
-**Painel lateral** (`col-side`):
-- **Alarmes & status** — uma linha por *discrete input* (`di.*`); acende quando
-  o bit está ativo. Chaves de trip (`reactor_tripped`, `turbine_tripped`,
-  `safety_blocked`, `alm_hi_cont_rad`, `alm_hi_cont_press`) recebem destaque.
-- **Controle do operador** — gerado de `/api/meta`, agrupado por sistema: um
-  **botão** por *coil* (`co.*`) e um **slider** por *holding register* (`hr.*`).
-- **Leituras por sistema** — abas (nucleo, primario, gv1, gv2, turbina, pxs,
-  contencao) com a tabela de *input registers* daquele sistema.
+- **Painel do Primário & Reator**: sistemas `nucleo`, `primario`, `pxs` — setpoint
+  de potência, barras, RCPs, pressurizador, boro, salvaguardas, SCRAM.
+- **Painel do Secundário & Turbina**: sistemas `gv1`, `gv2`, `turbina` — válvula da
+  turbina/desarme, nível e água de alimentação de cada GV.
+- **Simulação & Malfunções**: **escala de tempo** (botões 1×…3600×, aceleram os
+  venenos/Xenônio) e **LOCA** (slider de área de rompimento + botões
+  Pequeno/Médio/Grande). Esses dois usam a API de meta-simulação (não são Modbus).
+
+Cada botão reflete o estado do *coil* (`co.*`); cada slider reflete o *holding
+register* (`hr.*`), sem sobrescrever enquanto está em foco.
 
 ## 2. Como operar
 
@@ -80,11 +91,12 @@ Servida por `simulator/npp/api.py` na porta 5000.
 | GET | `/api/meta` | metadados dos pontos: `{ir, di, co, hr}`, cada item `{key,label,unit,lo,hi,system}` |
 | GET | `/api/state` | snapshot único em JSON |
 | GET | `/api/stream` | **SSE** (~4 Hz, um evento a cada 0,25 s) com o estado ao vivo |
-| POST | `/api/command` | corpo `{"kind":"coil"\|"hr","key":...,"value":...}` |
+| POST | `/api/command` | `{"kind":"coil"\|"hr","key":...,"value":...}` ou meta-sim `{"kind":"timescale"\|"loca","value":...}` (sem `key`) |
 
 O snapshot (`/api/state` e cada evento SSE) tem a forma
-`{"t": <s>, "ir": {...}, "di": {...}, "co": {...}, "hr": {...}}`, com os valores
-já em unidades de engenharia (a escala do Modbus já foi desfeita).
+`{"t":<s>, "rh":<h reator>, "ts":<escala>, "loca":<0..1>, "ir":{...}, "di":{...},
+"co":{...}, "hr":{...}}`, com os valores já em unidades de engenharia (a escala do
+Modbus já foi desfeita).
 
 **Exemplos com curl:**
 
@@ -112,6 +124,16 @@ curl -s -X POST http://localhost:5000/api/command \
 curl -s -X POST http://localhost:5000/api/command \
   -H 'Content-Type: application/json' \
   -d '{"kind":"hr","key":"sp_power_pct","value":80}'
+
+# meta-simulação: acelerar o tempo 720× (observar Xenônio)
+curl -s -X POST http://localhost:5000/api/command \
+  -H 'Content-Type: application/json' \
+  -d '{"kind":"timescale","value":720}'
+
+# meta-simulação: inserir LOCA de 60% de área
+curl -s -X POST http://localhost:5000/api/command \
+  -H 'Content-Type: application/json' \
+  -d '{"kind":"loca","value":0.6}'
 ```
 
 Para `kind:"coil"` o valor é tratado como booleano; para `kind:"hr"` como float

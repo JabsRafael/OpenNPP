@@ -18,7 +18,8 @@ class ProcessBus:
     power_frac: float = 1.0          # fracao termica total (fissao ou decaimento)
     decay_frac: float = 0.0
     P_th: float = C.RATED_MWTH       # potencia termica entregue ao primario (MW)
-    reactivity: float = 0.0          # Delta-k/k
+    reactivity: float = 0.0          # Delta-k/k (total)
+    rho_poison: float = 0.0          # Delta-k/k dos venenos (Xe+Sm+queimavel)
 
     # -- temperaturas / vazao primaria
     T_fuel: float = C.FUEL_TEMP_REF
@@ -39,6 +40,9 @@ class ProcessBus:
 
     # -- injecao de inventario (seguranca passiva)
     si_flow: float = 0.0             # kg/s de injecao no primario
+
+    # -- LOCA / inventario do primario
+    cooling_factor: float = 1.0      # 1,0 = nucleo coberto; <1 = descoberto (LOCA)
 
     # -- trips
     tripped: bool = False

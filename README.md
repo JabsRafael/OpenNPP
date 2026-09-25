@@ -31,6 +31,13 @@ REATOR (núcleo)  →  PRIMÁRIO (2 loops, 4 RCPs, pressurizador)  →  2× GERA
                        + PROTEÇÃO (RPS trip / ESFAS)  ← Defense-in-Depth
 ```
 
+Também simula **venenos** (Xenônio-135/Iodo-135 com pico pós-SCRAM, Samário-149,
+veneno queimável/burnup) com **escala de tempo** ajustável, e **acidentes** como o
+**LOCA** (perda de refrigerante) mitigado pela segurança passiva. A HMI é no estilo
+**sala de controle** (situação em cima com mímico P&ID + RPV e barras; controles
+primário/secundário embaixo). Ver [docs/02](docs/02-modelo-fisico.md) e
+[docs/05](docs/05-hmi.md).
+
 ## Início rápido
 
 ```bash

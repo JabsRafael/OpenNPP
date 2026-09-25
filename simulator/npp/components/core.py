@@ -21,11 +21,12 @@ class ReactorCore:
         self.rod_pos = C.ROD_POS_REF       # % retirada (100 = fora)
         self.reactivity = 0.0
 
-    def _reactivity(self, T_coolant, boron):
+    def _reactivity(self, T_coolant, boron, rho_poison):
         rho = C.ROD_WORTH * (self.rod_pos - C.ROD_POS_REF) / 100.0
         rho += C.ALPHA_DOPPLER * (self.T_fuel - C.FUEL_TEMP_REF)
         rho += C.ALPHA_MOD * (T_coolant - C.COOLANT_TEMP_REF)
         rho += C.ALPHA_BORON * (boron - C.BORON_REF)
+        rho += rho_poison                    # Xenonio + Samario + veneno queimavel
         return max(-0.20, min(0.02, rho))   # clamp de seguranca numerica
 
     def move_rods(self, demand, dt, tripped):
@@ -43,7 +44,7 @@ class ReactorCore:
 
     def step(self, bus, dt):
         # ---- cinetica pontual (subpassada p/ estabilidade numerica) --------
-        rho = self._reactivity(bus.T_coolant, bus.boron)
+        rho = self._reactivity(bus.T_coolant, bus.boron, bus.rho_poison)
         self.reactivity = rho
         sub = C.NEUTRONICS_SUBSTEPS
         dtn = dt / sub
@@ -64,10 +65,10 @@ class ReactorCore:
         power_frac = max(self.n, decay)
         P_th = C.RATED_MWTH * power_frac
 
-        # ---- no de combustivel --------------------------------------------
-        Q_fc = C.H_FUEL_COOLANT * (self.T_fuel - bus.T_coolant)     # MW
+        # ---- no de combustivel (transferencia degrada se o nucleo descobre)
+        Q_fc = C.H_FUEL_COOLANT * bus.cooling_factor * (self.T_fuel - bus.T_coolant)  # MW
         self.T_fuel += (P_th - Q_fc) / C.C_FUEL * dt
-        self.T_fuel = max(20.0, self.T_fuel)
+        self.T_fuel = max(20.0, min(3000.0, self.T_fuel))   # clamp (fusao ~2800)
 
         # ---- publica no barramento ----------------------------------------
         bus.fission_frac = self.n

@@ -24,6 +24,7 @@ class PrimarySystem:
         self.przr_press = C.PRZR_PRESS_NOMINAL
         self.przr_level = C.PRZR_LEVEL_NOMINAL
         self.przr_relief_open = False
+        self.inventory = 100.0        # % de inventario do primario (LOCA drena)
 
     def running_count(self):
         return sum(1 for r in self.rcp_running if r)
@@ -55,6 +56,22 @@ class PrimarySystem:
             self.przr_press -= 2.5 * dt
         self.przr_press = max(1.0, min(250.0, self.przr_press))
 
+    def apply_loca(self, bus, dt, loca_size):
+        """Rompimento no primario: drena inventario e despressuriza; a injecao de
+        seguranca (bus.si_flow) reenche. Define bus.cooling_factor (descobrimento
+        do nucleo)."""
+        loca_size = max(0.0, min(1.0, loca_size))
+        press_frac = max(0.2, self.przr_press / C.PRZR_PRESS_NOMINAL)
+        if loca_size > 0.0:
+            self.inventory -= C.LOCA_DRAIN_RATE * loca_size * press_frac * dt
+            self.przr_press -= C.LOCA_DEPRESS_RATE * loca_size * press_frac * dt
+        # reposicao por injecao de seguranca (CMT/acumuladores/IRWST)
+        self.inventory += C.SI_REFILL_GAIN * bus.si_flow * dt
+        self.inventory = max(0.0, min(100.0, self.inventory))
+        # fator de resfriamento: abaixo do limiar o nucleo descobre; perto de
+        # zero de inventario a transferencia quase cessa -> superaquecimento.
+        bus.cooling_factor = max(0.02, min(1.0, self.inventory / C.UNCOVERY_THRESHOLD))
+
     # -------------------------------------------------------------------- step
     def step(self, bus, dt, heater, spray):
         # ---- vazao das 4 RCPs (fracao da nominal, com inercia) -------------
@@ -84,6 +101,7 @@ class PrimarySystem:
         self.przr_level = C.PRZR_LEVEL_NOMINAL + 1.2 * (self.T_coolant - C.COOLANT_TEMP_REF)
         if bus.si_flow > 0:
             self.przr_level += bus.si_flow * 2e-3 * dt      # reposicao de inventario
+        self.przr_level = min(self.przr_level, self.inventory)   # LOCA drena o nivel
         self.przr_level = max(0.0, min(100.0, self.przr_level))
 
         # ---- publica -------------------------------------------------------

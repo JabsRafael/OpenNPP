@@ -96,11 +96,16 @@ def make_handler(engine):
             length = int(self.headers.get("Content-Length", 0))
             try:
                 data = json.loads(self.rfile.read(length) or b"{}")
-                kind, key, value = data["kind"], data["key"], data["value"]
+                kind, value = data["kind"], data["value"]
+                key = data.get("key")
                 if kind == "coil":
                     engine.set_coil(key, bool(value))
                 elif kind == "hr":
                     engine.set_hr(key, float(value))
+                elif kind == "timescale":
+                    engine.set_time_scale(value)
+                elif kind == "loca":
+                    engine.set_loca(value)
                 else:
                     raise ValueError("kind invalido")
                 self._send(200, json.dumps({"ok": True}).encode())

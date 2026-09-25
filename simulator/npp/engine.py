@@ -28,7 +28,10 @@ class SimEngine:
     def __init__(self):
         self.plant = Plant()
         self.lock = threading.Lock()
-        self.t = 0.0
+        self.t = 0.0                 # segundos reais de simulacao (dinamica rapida)
+        self.reactor_seconds = 0.0   # relogio do reator (acelerado p/ venenos)
+        self.time_scale = C.TIME_SCALE_DEFAULT
+        self.loca_size = 0.0         # 0..1 area de rompimento (LOCA)
         self.running = True
 
         self.slave = ModbusSlaveContext(
@@ -65,7 +68,7 @@ class SimEngine:
             sp = {p.key: decode(hr[p.addr], p) for p in HOLDING_REGISTERS}
             auto = cmd["cmd_auto_control"]
 
-            di = self.plant.step(dt, cmd, sp, auto)
+            di = self.plant.step(dt, cmd, sp, auto, self.time_scale, self.loca_size)
 
             # devolve demandas calculadas pelo controle auto aos HR (p/ HMI)
             if auto and self.plant._auto_out is not None:
@@ -86,6 +89,7 @@ class SimEngine:
             self.slave.setValues(FC_IR, 0,
                                  [encode(sens[p.key], p) for p in INPUT_REGISTERS])
             self.t += dt
+            self.reactor_seconds += dt * self.time_scale
 
     def snapshot(self):
         with self.lock:
@@ -95,6 +99,9 @@ class SimEngine:
             hr = self.slave.getValues(FC_HR, 0, len(HOLDING_REGISTERS))
         return {
             "t": round(self.t, 1),
+            "rh": round(self.reactor_seconds / 3600.0, 3),   # relogio do reator (h)
+            "ts": self.time_scale,
+            "loca": round(self.loca_size, 2),
             "ir": {p.key: round(decode(ir[p.addr], p), 2) for p in INPUT_REGISTERS},
             "di": {p.key: bool(di[p.addr]) for p in DISCRETE_INPUTS},
             "co": {p.key: bool(co[p.addr]) for p in COILS},
@@ -110,6 +117,12 @@ class SimEngine:
         p = HR_BY_KEY[key]
         with self.lock:
             self.slave.setValues(FC_HR, p.addr, [encode(float(value), p)])
+
+    def set_time_scale(self, value):
+        self.time_scale = max(1.0, min(C.TIME_SCALE_MAX, float(value)))
+
+    def set_loca(self, value):
+        self.loca_size = max(0.0, min(1.0, float(value)))
 
     def run(self):
         next_t = time.monotonic()

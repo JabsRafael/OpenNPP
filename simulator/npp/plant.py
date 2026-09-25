@@ -17,6 +17,7 @@ from . import protection
 from .components.bus import ProcessBus
 from .components.core import ReactorCore
 from .components.primary import PrimarySystem
+from .components.reactor_poisons import ReactorPoisons
 from .components.safety import PassiveSafety
 from .components.steam_generator import SteamGenerator
 from .components.turbine import Turbine
@@ -27,14 +28,19 @@ class Plant:
     def __init__(self):
         self.bus = ProcessBus()
         self.core = ReactorCore()
+        self.poisons = ReactorPoisons()
         self.primary = PrimarySystem()
         self.sg = [SteamGenerator("GV1"), SteamGenerator("GV2")]
         self.turbine = Turbine()
         self.safety = PassiveSafety()
         self.control = ControlSystem()
 
-    def step(self, dt, cmd, sp, auto):
+    def step(self, dt, cmd, sp, auto, time_scale=1.0, loca_size=0.0):
         bus = self.bus
+
+        # ---- 0. Venenos (passo acelerado) e LOCA ---------------------------
+        bus.rho_poison = self.poisons.step(self.core.n, dt * time_scale)
+        self.primary.apply_loca(bus, dt, loca_size)
 
         # ---- 1. Demandas de atuador (auto vs manual/PLC) -------------------
         if auto:
@@ -83,7 +89,7 @@ class Plant:
 
     # -------------------------------------------------------- leitura sensores
     def sensors(self):
-        b, core, prim = self.bus, self.core, self.primary
+        b, core, prim, poi = self.bus, self.core, self.primary, self.poisons
         s1, s2, turb, saf = self.sg[0], self.sg[1], self.turbine, self.safety
         return {
             "reactor_power_pct": core.n * 100.0,
@@ -92,6 +98,13 @@ class Plant:
             "reactivity_pcm": core.reactivity * 1e5,
             "decay_heat_pct": b.decay_frac * 100.0,
             "rod_position_pct": core.rod_pos,
+            "xenon_worth_pcm": poi.rho_xe * 1e5,
+            "xenon_pct": poi.Xe * 100.0,
+            "iodine_pct": poi.I * 100.0,
+            "samarium_worth_pcm": poi.rho_sm * 1e5,
+            "burnable_poison_pct": poi.bp * 100.0,
+            "burnup_pct": poi.burnup,
+            "primary_inventory_pct": prim.inventory,
             "coolant_tavg_c": prim.T_coolant,
             "coolant_thot_c": b.T_hot,
             "coolant_tcold_c": b.T_cold,

@@ -3,144 +3,221 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>OpenNPP — HMI AP1000 (Simulador OT)</title>
+<title>OpenNPP — Sala de Controle (AP1000, Simulador OT)</title>
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 <header>
-  <div class="brand">OpenNPP <small>AP1000-like · Simulador OT / Cyber Range</small></div>
-  <div class="stat"><span class="v" id="s-power">--</span><span class="k">Potência</span></div>
-  <div class="stat"><span class="v" id="s-mwe">--</span><span class="k">MW elétrico</span></div>
+  <div class="brand">OpenNPP <small>AP1000 · Sala de Controle · Simulador OT</small></div>
+  <div class="stat"><span class="v" id="s-power">--</span><span class="k">Potência reator</span></div>
+  <div class="stat"><span class="v" id="s-mwe">--</span><span class="k">Geração MWe</span></div>
   <div class="stat"><span class="v" id="s-tavg">--</span><span class="k">Tavg</span></div>
-  <div class="stat"><span class="v" id="s-przr">--</span><span class="k">Pressão PZR</span></div>
-  <div class="stat"><span class="v" id="s-time">--</span><span class="k">Tempo sim</span></div>
+  <div class="stat"><span class="v" id="s-przr">--</span><span class="k">Pressão RCS</span></div>
+  <div class="stat"><span class="v" id="s-clock">--</span><span class="k">Tempo reator</span></div>
+  <div class="stat"><span class="v" id="s-speed">1×</span><span class="k">Escala tempo</span></div>
   <div class="status-badge" id="s-status">NORMAL</div>
 </header>
 
-<div class="wrap">
-  <!-- ============================ MÍMICO ============================ -->
-  <div class="card">
-    <h3>Diagrama da planta</h3>
-    <svg class="mimic" viewBox="0 0 1000 560" xmlns="http://www.w3.org/2000/svg">
+<!-- ================= PAINEL DE SITUAÇÃO (topo) ================= -->
+<section class="situation">
+  <div class="card mimic-card">
+    <h3>Diagrama da planta (P&amp;ID)</h3>
+    <svg class="mimic" viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="hatch" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+          <line x1="0" y1="0" x2="0" y2="6" stroke="#3a5a3f" stroke-width="3"/>
+        </pattern>
+      </defs>
+
       <!-- contenção -->
-      <rect class="containment" x="20" y="60" width="560" height="480" rx="12"/>
-      <text class="lbl" x="30" y="52">Contenção</text>
+      <rect class="containment" x="28" y="60" width="540" height="512" rx="14"/>
+      <text class="lbl" x="40" y="52">Edifício de contenção</text>
 
-      <!-- pipes loop 1 (GV1, topo) -->
-      <polyline id="hot1" class="pipe hot" points="150,320 150,150 360,150"/>
-      <polyline id="cold1" class="pipe cold" points="360,215 250,215 250,300 150,300"/>
-      <!-- pipes loop 2 (GV2, base) -->
-      <polyline id="hot2" class="pipe hot" points="150,400 150,470 360,470"/>
-      <polyline id="cold2" class="pipe cold" points="360,405 250,405 250,360 150,360"/>
-      <!-- vapor para turbina -->
-      <polyline id="steam1" class="pipe steam" points="470,150 640,150 640,120 690,120"/>
-      <polyline id="steam2" class="pipe steam" points="470,470 660,470 660,175 690,175"/>
-      <!-- retorno condensado -->
-      <polyline id="feed" class="pipe cold" points="760,300 560,300 560,510 250,510 250,470"/>
+      <!-- ================= tubulações ================= -->
+      <!-- hot legs (RPV -> GV) -->
+      <polyline id="hot1" class="pipe hot" points="175,250 175,150 360,150"/>
+      <polyline id="hot2" class="pipe hot" points="175,395 175,470 360,470"/>
+      <!-- cold legs (GV -> RCP -> RPV) -->
+      <polyline id="cold1" class="pipe cold" points="360,215 250,215 250,300 190,300"/>
+      <polyline id="cold2" class="pipe cold" points="360,415 250,415 250,340 190,340"/>
+      <!-- vapor GV -> turbina -->
+      <polyline id="steam1" class="pipe steam" points="460,140 620,140 620,120 650,120"/>
+      <polyline id="steam2" class="pipe steam" points="460,460 640,460 640,150 650,150"/>
+      <!-- condensado turbina -> GV -->
+      <polyline id="feed" class="pipe cold" points="695,290 700,540 250,540 250,470 360,470"/>
 
-      <!-- núcleo do reator -->
-      <rect id="core" class="core" x="105" y="320" width="90" height="80" rx="6"/>
-      <text class="lbl" x="150" y="315" text-anchor="middle">Reator</text>
-      <text class="rd big" data-k="reactor_power_pct" x="150" y="352" text-anchor="middle">--</text>
-      <text class="rd" data-k="fuel_temp_c" x="150" y="372" text-anchor="middle">--</text>
-      <text class="rd" data-k="rod_position_pct" x="150" y="390" text-anchor="middle">--</text>
-
-      <!-- pressurizador -->
-      <rect class="vessel hot" x="270" y="95" width="42" height="95" rx="6"/>
-      <line class="pipe hot" x1="291" y1="190" x2="291" y2="150"/>
-      <text class="lbl" x="291" y="88" text-anchor="middle">PZR</text>
-      <text class="rd" data-k="przr_pressure_bar" x="291" y="128" text-anchor="middle">--</text>
-      <text class="rd" data-k="przr_level_pct" x="291" y="146" text-anchor="middle">--</text>
-
-      <!-- RCP pumps -->
-      <circle id="rcp1" class="node" cx="250" cy="215" r="12"/>
-      <circle id="rcp2" class="node" cx="210" cy="300" r="12"/>
-      <circle id="rcp3" class="node" cx="250" cy="405" r="12"/>
-      <circle id="rcp4" class="node" cx="210" cy="360" r="12"/>
-      <text class="lbl" x="230" y="440" text-anchor="middle">4× RCP</text>
-
-      <!-- GV1 -->
-      <rect id="sg1" class="vessel" x="360" y="110" width="110" height="105" rx="6"/>
-      <text class="lbl" x="415" y="105" text-anchor="middle">Gerador de Vapor 1</text>
-      <text class="rd" data-k="sg1_pressure_bar" x="415" y="140" text-anchor="middle">--</text>
-      <text class="rd" data-k="sg1_level_pct" x="415" y="160" text-anchor="middle">--</text>
-      <text class="rd" data-k="sg1_steam_flow_kgs" x="415" y="180" text-anchor="middle">--</text>
-      <!-- GV2 -->
-      <rect id="sg2" class="vessel" x="360" y="405" width="110" height="105" rx="6"/>
-      <text class="lbl" x="415" y="400" text-anchor="middle">Gerador de Vapor 2</text>
-      <text class="rd" data-k="sg2_pressure_bar" x="415" y="435" text-anchor="middle">--</text>
-      <text class="rd" data-k="sg2_level_pct" x="415" y="455" text-anchor="middle">--</text>
-      <text class="rd" data-k="sg2_steam_flow_kgs" x="415" y="475" text-anchor="middle">--</text>
-
-      <!-- turbina / gerador (fora da contenção) -->
-      <rect id="turbine" class="vessel" x="690" y="100" width="90" height="95" rx="6"/>
-      <text class="lbl" x="735" y="94" text-anchor="middle">Turbina / Gerador</text>
-      <text class="rd big" data-k="gen_power_mwe" x="735" y="140" text-anchor="middle">--</text>
-      <text class="rd" data-k="turbine_rpm" x="735" y="162" text-anchor="middle">--</text>
-      <circle id="gen" class="node" cx="820" cy="147" r="18"/>
-      <text class="lbl" x="820" y="152" text-anchor="middle">G</text>
-      <line class="pipe cold" x1="780" y1="147" x2="802" y2="147"/>
-
-      <!-- condensador -->
-      <rect class="vessel" x="700" y="270" width="90" height="40" rx="6"/>
-      <text class="lbl" x="745" y="295" text-anchor="middle">Condensador</text>
-      <line class="pipe steam" x1="735" y1="195" x2="735" y2="270"/>
-
-      <!-- sistemas de segurança passiva (PXS) -->
-      <text class="lbl" x="70" y="500">Segurança passiva (PXS)</text>
-      <g id="pxs">
-        <rect id="cmt" class="node" x="60" y="150" width="34" height="34" rx="4"/>
-        <text class="lbl" x="77" y="200" text-anchor="middle">CMT</text>
-        <text class="rd" data-k="cmt1_level_pct" x="77" y="143" text-anchor="middle">--</text>
-        <rect id="prhr" class="node" x="60" y="250" width="34" height="34" rx="4"/>
-        <text class="lbl" x="77" y="300" text-anchor="middle">PRHR</text>
-        <text class="rd" data-k="prhr_flow_pct" x="77" y="243" text-anchor="middle">--</text>
-        <rect id="accum" class="node" x="60" y="350" width="34" height="34" rx="4"/>
-        <text class="lbl" x="77" y="400" text-anchor="middle">ACUM</text>
-        <text class="rd" data-k="accum_press_bar" x="77" y="343" text-anchor="middle">--</text>
-        <rect id="ads" class="node" x="115" y="250" width="34" height="34" rx="4"/>
-        <text class="lbl" x="132" y="243" text-anchor="middle">ADS</text>
-        <text class="rd" data-k="ads_stage" x="132" y="272" text-anchor="middle">--</text>
+      <!-- ================= RPV (vaso de pressão do reator) ================= -->
+      <g id="rpv-group">
+        <!-- CRDM (mecanismos de acionamento das barras) -->
+        <rect class="crdm" x="118" y="188" width="10" height="26"/>
+        <rect class="crdm" x="136" y="188" width="10" height="26"/>
+        <rect class="crdm" x="154" y="188" width="10" height="26"/>
+        <!-- vaso -->
+        <path class="vessel rpv" d="M100,235 q0,-25 25,-25 h30 q25,0 25,25 v185 q0,20 -20,20 h-40 q-20,0 -20,-20 z"/>
+        <!-- núcleo (região de combustível) -->
+        <rect id="core" class="core" x="112" y="345" width="56" height="70" rx="2"/>
+        <!-- barras de controle (inserção variável) -->
+        <line class="rod" id="rod0" x1="123" y1="215" x2="123" y2="360"/>
+        <line class="rod" id="rod1" x1="141" y1="215" x2="141" y2="360"/>
+        <line class="rod" id="rod2" x1="159" y1="215" x2="159" y2="360"/>
+        <text class="lbl" x="140" y="205" text-anchor="middle">RPV</text>
+        <text class="rd big" data-k="reactor_power_pct" x="140" y="300" text-anchor="middle">--</text>
+        <text class="rd" data-k="fuel_temp_c" x="140" y="318" text-anchor="middle">--</text>
+        <text class="rd" data-k="rod_position_pct" x="140" y="440" text-anchor="middle">--</text>
+        <text class="lbl" x="140" y="453" text-anchor="middle">barras retiradas</text>
       </g>
 
-      <!-- contenção: pressão/radiação -->
-      <text class="lbl" x="500" y="52" text-anchor="end">Contenção</text>
-      <text class="rd" data-k="containment_press_bar" x="500" y="70" text-anchor="end">--</text>
-      <text class="rd" data-k="containment_rad_msvh" x="500" y="88" text-anchor="end">--</text>
-    </svg>
+      <!-- ================= Pressurizador ================= -->
+      <g>
+        <rect class="vessel hot" x="252" y="112" width="38" height="88" rx="8"/>
+        <path class="heater" d="M258,190 h26 M258,194 h26"/>
+        <line class="pipe hot" x1="271" y1="200" x2="271" y2="150"/>
+        <text class="lbl" x="271" y="106" text-anchor="middle">PZR</text>
+        <text class="rd" data-k="przr_pressure_bar" x="271" y="140" text-anchor="middle">--</text>
+        <text class="rd" data-k="przr_level_pct" x="271" y="158" text-anchor="middle">--</text>
+      </g>
 
-    <!-- tendências -->
-    <div style="margin-top:12px">
-      <canvas class="spark" id="spark"></canvas>
-      <div class="legend">
-        <span style="color:var(--ok)">Potência reator (%)</span>
-        <span style="color:var(--accent)">Geração (MWe/12)</span>
-        <span style="color:var(--hot)">Tavg (°C)</span>
-      </div>
-    </div>
+      <!-- ================= Bombas RCP ================= -->
+      <g>
+        <use href="#pumpsym" x="0" y="0"/>
+        <g id="rcp1" class="pump"><circle cx="250" cy="215" r="13"/><path d="M250,202 L261,221 L239,221 Z"/></g>
+        <g id="rcp2" class="pump"><circle cx="210" cy="300" r="13"/><path d="M210,287 L221,306 L199,306 Z"/></g>
+        <g id="rcp3" class="pump"><circle cx="250" cy="415" r="13"/><path d="M250,402 L261,421 L239,421 Z"/></g>
+        <g id="rcp4" class="pump"><circle cx="210" cy="340" r="13"/><path d="M210,327 L221,346 L199,346 Z"/></g>
+        <text class="lbl" x="220" y="372" text-anchor="middle">4× RCP</text>
+      </g>
+
+      <!-- ================= Geradores de vapor (símbolo com feixe em U) ======= -->
+      <g>
+        <path class="vessel" d="M360,120 h100 v90 q0,20 -20,20 h-60 q-20,0 -20,-20 z"/>
+        <path class="utube" d="M378,130 v70 M394,130 v70 M410,130 v70 M426,130 v70 M442,130 v70"/>
+        <path class="utube" d="M378,200 q8,10 16,0 M410,200 q8,10 16,0"/>
+        <text class="lbl" x="410" y="114" text-anchor="middle">Gerador de Vapor 1</text>
+        <text class="rd" data-k="sg1_level_pct" x="500" y="150" text-anchor="start">--</text>
+        <text class="rd" data-k="sg1_pressure_bar" x="500" y="168" text-anchor="start">--</text>
+      </g>
+      <g>
+        <path class="vessel" d="M360,440 h100 v90 q0,20 -20,20 h-60 q-20,0 -20,-20 z" transform="translate(0,-60)"/>
+        <path class="utube" d="M378,390 v70 M394,390 v70 M410,390 v70 M426,390 v70 M442,390 v70"/>
+        <text class="lbl" x="410" y="384" text-anchor="middle">Gerador de Vapor 2</text>
+        <text class="rd" data-k="sg2_level_pct" x="500" y="420" text-anchor="start">--</text>
+        <text class="rd" data-k="sg2_pressure_bar" x="500" y="438" text-anchor="start">--</text>
+      </g>
+
+      <!-- ================= Turbina / Gerador (fora da contenção) ============ -->
+      <g>
+        <polygon id="turbine" class="turbine" points="650,110 700,95 700,175 650,160"/>
+        <polygon class="turbine" points="702,100 740,88 740,182 702,170"/>
+        <circle id="gen" class="gen" cx="775" cy="135" r="20"/>
+        <text class="gtext" x="775" y="141" text-anchor="middle">G</text>
+        <line class="pipe cold" x1="740" y1="135" x2="755" y2="135"/>
+        <text class="lbl" x="700" y="82" text-anchor="middle">Turbina / Gerador</text>
+        <text class="rd big" data-k="gen_power_mwe" x="700" y="215" text-anchor="middle">--</text>
+        <text class="rd" data-k="turbine_rpm" x="700" y="233" text-anchor="middle">--</text>
+      </g>
+
+      <!-- condensador -->
+      <g>
+        <rect class="vessel" x="650" y="250" width="90" height="42" rx="4"/>
+        <path class="cond" d="M656,264 h78 M656,272 h78 M656,280 h78"/>
+        <text class="lbl" x="695" y="246" text-anchor="middle">Condensador</text>
+        <line class="pipe steam" x1="695" y1="175" x2="695" y2="250"/>
+        <path class="cw" d="M648,300 h94"/>
+      </g>
+
+      <!-- ================= Segurança passiva (PXS) ================= -->
+      <text class="lbl" x="45" y="500">Segurança passiva (PXS)</text>
+      <g id="cmt" class="pxs-node"><rect x="45" y="150" width="30" height="38" rx="3"/></g>
+      <text class="lbl" x="60" y="200" text-anchor="middle">CMT</text>
+      <text class="rd sm" data-k="cmt1_level_pct" x="60" y="145" text-anchor="middle">--</text>
+      <g id="accum" class="pxs-node"><ellipse cx="60" cy="245" rx="16" ry="20"/></g>
+      <text class="lbl" x="60" y="278" text-anchor="middle">ACUM</text>
+      <text class="rd sm" data-k="accum_press_bar" x="60" y="215" text-anchor="middle">--</text>
+      <g id="prhr" class="pxs-node"><rect x="45" y="320" width="30" height="30" rx="3"/><path d="M50,335 h20" stroke="#8fb" fill="none"/></g>
+      <text class="lbl" x="60" y="365" text-anchor="middle">PRHR</text>
+      <text class="rd sm" data-k="prhr_flow_pct" x="60" y="315" text-anchor="middle">--</text>
+      <g id="ads" class="pxs-node"><path d="M300,90 l14,-10 v20 z M314,90 l-14,-10 v20 z" transform="translate(-7,0)"/></g>
+      <text class="lbl" x="300" y="70" text-anchor="middle">ADS</text>
+
+      <!-- inventário / contenção -->
+      <text class="lbl" x="540" y="520" text-anchor="end">Inventário RCS</text>
+      <text class="rd" data-k="primary_inventory_pct" x="540" y="538" text-anchor="end">--</text>
+      <text class="lbl" x="540" y="52" text-anchor="end">Contenção</text>
+      <text class="rd" data-k="containment_press_bar" x="540" y="70" text-anchor="end">--</text>
+      <text class="rd" data-k="containment_rad_msvh" x="540" y="88" text-anchor="end">--</text>
+    </svg>
   </div>
 
-  <!-- ============================ LATERAL ============================ -->
-  <div class="col-side">
+  <!-- coluna direita da situação -->
+  <div class="situation-side">
     <div class="card">
-      <h3>Alarmes & status</h3>
+      <h3>Núcleo &amp; reatividade</h3>
+      <div class="readings-grid">
+        <div class="rk">Reatividade total</div><div class="rv" data-r="reactivity_pcm">--</div>
+        <div class="rk">Reativ. Xenônio</div><div class="rv" data-r="xenon_worth_pcm">--</div>
+        <div class="rk">Xe-135 / I-135</div><div class="rv" id="r-xei">--</div>
+        <div class="rk">Reativ. Samário</div><div class="rv" data-r="samarium_worth_pcm">--</div>
+        <div class="rk">Veneno queimável</div><div class="rv" data-r="burnable_poison_pct">--</div>
+        <div class="rk">Burnup do ciclo</div><div class="rv" data-r="burnup_pct">--</div>
+        <div class="rk">Barras (retirada)</div><div class="rv" data-r="rod_position_pct">--</div>
+        <div class="rk">Calor decaimento</div><div class="rv" data-r="decay_heat_pct">--</div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Alarmes &amp; status</h3>
       <div class="alarms" id="alarms"></div>
     </div>
     <div class="card">
-      <h3>Controle do operador</h3>
-      <div id="controls"></div>
-    </div>
-    <div class="card">
-      <h3>Leituras por sistema</h3>
-      <div class="tabs" id="tabs"></div>
-      <div class="readings-grid" id="readings"></div>
+      <h3>Tendências</h3>
+      <canvas class="spark" id="spark"></canvas>
+      <div class="legend">
+        <span style="color:var(--ok)">Potência %</span>
+        <span style="color:var(--accent)">MWe/12</span>
+        <span style="color:var(--hot)">Tavg °C</span>
+        <span style="color:var(--xe)">Xe %</span>
+      </div>
     </div>
   </div>
-</div>
+</section>
+
+<!-- ================= PAINÉIS DE CONTROLE (base) ================= -->
+<section class="controls-deck">
+  <div class="card panel-primary">
+    <h3>■ Painel do Primário &amp; Reator</h3>
+    <div id="ctl-primary"></div>
+  </div>
+  <div class="card panel-secondary">
+    <h3>■ Painel do Secundário &amp; Turbina</h3>
+    <div id="ctl-secondary"></div>
+  </div>
+  <div class="card panel-sim">
+    <h3>■ Simulação &amp; Malfunções</h3>
+    <div class="ctl-group">
+      <h4>Escala de tempo (acelera venenos/Xenônio)</h4>
+      <div class="coils" id="timescale-btns"></div>
+      <p class="hint">Xe-135 entra em ~9–11 h. Acelere para observar o pico e o "poço de iodo".</p>
+    </div>
+    <div class="ctl-group">
+      <h4>LOCA — rompimento no primário</h4>
+      <div class="slider">
+        <label>Área de rompimento</label>
+        <input type="range" id="loca-range" min="0" max="100" step="5" value="0">
+        <span class="num" id="loca-val">0 %</span>
+      </div>
+      <div class="coils">
+        <button class="btn" onclick="setLoca(0)">Sem LOCA</button>
+        <button class="btn danger" onclick="setLoca(25)">Pequeno</button>
+        <button class="btn danger" onclick="setLoca(60)">Médio</button>
+        <button class="btn danger" onclick="setLoca(100)">Grande</button>
+      </div>
+      <p class="hint">Com salvaguardas: CMT/ADS/IRWST mitigam. Com <b>bloqueio de salvaguardas</b>: o núcleo descobre e superaquece.</p>
+    </div>
+  </div>
+</section>
 
 <footer>
-  OpenNPP — ambiente SIMULADO para treino de segurança de OT/ICS. Nenhuma planta física real é controlada.
-  Comandos da HMI escrevem nos mesmos registradores Modbus expostos na rede OT (porta 502).
+  Ambiente SIMULADO para treino de segurança de OT/ICS. Nenhuma planta física real é controlada.
+  Comandos da HMI escrevem nos mesmos registradores Modbus da rede OT (porta 502).
 </footer>
 
 <script src="/app.js"></script>

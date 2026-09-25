@@ -49,6 +49,10 @@ o **pressurizador** mantém a pressão; e camadas de **proteção** (RPS) e
 | **SCRAM** | Desligamento rápido (inserção das barras) | parada de emergência |
 | **MTC** | Moderator Temperature Coefficient | realimentação negativa de reatividade |
 | **pcm** | por cem mil (10⁻⁵ Δk/k) | unidade de reatividade |
+| **Xe-135 / I-135** | Xenônio / Iodo (venenos de fissão) | pico pós-SCRAM, "poço de iodo" |
+| **Sm-149** | Samário-149 (veneno permanente) | buildup após desligamento |
+| **Burnup** | queima do combustível | depleta o veneno queimável |
+| **LOCA** | Loss of Coolant Accident | perda de refrigerante do primário |
 | **Modbus** | Protocolo industrial (sem autenticação) | barramento de campo / superfície de ataque |
 | **HMI** | Human-Machine Interface | supervisão/operação |
 | **SCADA** | Supervisory Control and Data Acquisition | ScadaLTS (nível 2) |

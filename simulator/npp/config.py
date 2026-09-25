@@ -109,11 +109,49 @@ ESFAS_LO_PRZR_PRESS = 120.0  # bar -> sinal "S" (safeguards): CMT + PRHR
 ESFAS_HI_CONT_PRESS = 2.5    # bar -> isolamento / salvaguardas
 ESFAS_LO_SG_LEVEL = 15.0     # % -> PRHR
 
+# ================================================ LOCA (perda de refrigerante)
+# Rompimento no primario: perde inventario e despressuriza. Mitigado pela
+# seguranca passiva (baixa pressao -> ESFAS -> CMT/acumuladores/ADS reenchem).
+# Se as salvaguardas estiverem bloqueadas, o nucleo descobre e superaquece.
+LOCA_DRAIN_RATE = 9.0        # %/s de inventario a rompimento=1,0 e pressao nominal
+LOCA_DEPRESS_RATE = 7.0      # bar/s a rompimento=1,0
+SI_REFILL_GAIN = 0.02        # %/s de inventario por kg/s de injecao de seguranca
+UNCOVERY_THRESHOLD = 45.0    # % de inventario abaixo do qual o nucleo descobre
+
 # ============================================================== CONTENCAO
 CONT_PRESS_NOMINAL = 1.0     # bar abs
 CONT_VOLUME_FACTOR = 0.02    # ganho de pressurizacao por dano
 
+# ============================ VENENOS (Xenonio/Iodo, Samario, veneno queimavel)
+# Modelo normalizado: concentracoes em unidades de equilibrio a 100% de potencia
+# (I_eq = Xe_eq = 1). Reatividade em forma de DESVIO do equilibrio -> zero no
+# inicio (preserva a criticalidade) e mostra os transientes (pico de Xenonio pos-
+# desligamento, "poço de iodo", buildup permanente de Samario).
+XE_LAMBDA_I  = 2.926e-5   # /s  decaimento do I-135 (T½ 6,58 h)
+XE_LAMBDA_XE = 2.106e-5   # /s  decaimento do Xe-135 (T½ 9,14 h)
+XE_SIGMA_PHI = 6.0e-5     # /s  queima do Xe por absorcao a 100% de fluxo
+# I_eq > Xe_eq (estoque de iodo alto por causa da queima) -> gera o PICO de
+# Xenonio pos-desligamento. Normalizado: Xe_eq = 1, I_eq = XE_I_EQ a 100%.
+XE_I_EQ = 2.3
+XE_GI  = XE_LAMBDA_I * XE_I_EQ                              # producao de I
+XE_GXE = (XE_LAMBDA_XE + XE_SIGMA_PHI) - XE_LAMBDA_I * XE_I_EQ  # producao de Xe (Xe_eq=1)
+XENON_WORTH = 0.028       # Δk/k por unidade de desvio de Xe (~2800 pcm)
+
+SM_LAMBDA_PM = 3.63e-6    # /s  decaimento do Pm-149 (T½ ~53 h)
+SM_SIGMA_PHI = 3.63e-6    # /s  queima do Sm-149 a 100% (= lambda_Pm -> Sm_eq=1)
+SM_GPM = SM_LAMBDA_PM                                  # producao de Pm (Pm_eq=1)
+SAMARIUM_WORTH = 0.007    # Δk/k por unidade de desvio de Sm (~700 pcm)
+
+# Veneno queimavel (gadolinia/IFBA) + burnup — evolucao MUITO lenta (meses).
+BURNABLE_WORTH = 0.020    # Δk/k liberado ao longo da queima (~2000 pcm)
+BURNUP_RATE = 100.0 / 4.7e7   # % de ciclo por segundo a 100% (ciclo ~18 meses)
+BP_TAU = 45.0             # constante de queima do veneno (% de burnup)
+
 # ============================================================== SIMULACAO
-DT = 0.1                     # passo do laco externo (s)
+DT = 0.1                     # passo do laco externo (s), dinamica rapida
 NEUTRONICS_SUBSTEPS = 200    # subpassos da cinetica pontual por DT
 REALTIME = True
+TIME_SCALE_DEFAULT = 1.0     # acelera SO' a evolucao de venenos/burnup (nao a
+                             # dinamica rapida) -> permite ver Xenonio (horas) em
+                             # minutos. Ajustavel pela HMI.
+TIME_SCALE_MAX = 3600.0

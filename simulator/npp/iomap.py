@@ -77,6 +77,15 @@ INPUT_REGISTERS = [
     Point(31, "containment_press_bar","Contencao pressao",    "bar", 100.0, lo=0, hi=6, system="contencao"),
     Point(32, "containment_rad_msvh","Contencao radiacao",    "mSv/h",100.0, hi=1000, system="contencao"),
     Point(33, "containment_temp_c","Contencao temperatura",   "degC", 10.0, hi=150, system="contencao"),
+    # -- venenos (Xenonio/Iodo, Samario, veneno queimavel)
+    Point(34, "xenon_worth_pcm",   "Reatividade Xenonio",     "pcm",   1.0, signed=True, lo=-4000, hi=1000, system="nucleo"),
+    Point(35, "xenon_pct",         "Concentracao Xe-135",     "%",    10.0, hi=300, system="nucleo"),
+    Point(36, "iodine_pct",        "Concentracao I-135",      "%",    10.0, hi=300, system="nucleo"),
+    Point(37, "samarium_worth_pcm","Reatividade Samario",     "pcm",   1.0, signed=True, lo=-2000, hi=1000, system="nucleo"),
+    Point(38, "burnable_poison_pct","Veneno queimavel restante","%",  10.0, hi=100, system="nucleo"),
+    Point(39, "burnup_pct",        "Burnup do ciclo",         "%",    10.0, hi=100, system="nucleo"),
+    # -- inventario do primario (LOCA)
+    Point(40, "primary_inventory_pct","Inventario primario",  "%",    10.0, hi=100, system="primario"),
 ]
 
 # --------------------------------------------------------------- DISCRETE INPUTS
@@ -134,18 +143,18 @@ COILS = [
 
 # --------------------------------------------------------------- HOLDING REGISTERS
 HOLDING_REGISTERS = [
-    Point(0,  "sp_power_pct",        "SP potencia",           "%",   10.0, hi=100, system="nucleo"),
-    Point(1,  "dmd_rod_pct",         "Demanda barras",        "%",   10.0, hi=100, system="nucleo"),
-    Point(2,  "dmd_rcp_speed_pct",   "Demanda rotacao RCP",   "%",   10.0, hi=100, system="primario"),
-    Point(3,  "sp_przr_pressure_bar","SP pressao PZR",        "bar", 10.0, lo=120, hi=175, system="primario"),
-    Point(4,  "sp_przr_level_pct",   "SP nivel PZR",          "%",   10.0, hi=100, system="primario"),
-    Point(5,  "sp_boron_ppm",        "SP boro",               "ppm",  1.0, hi=3500, system="primario"),
-    Point(6,  "dmd_turbine_valve_pct","Demanda valv. turbina","%",   10.0, hi=100, system="turbina"),
-    Point(7,  "dmd_turbine_load_mwe","Demanda carga turbina", "MWe", 10.0, hi=1300, system="turbina"),
-    Point(8,  "sp_sg1_level_pct",    "SP nivel GV1",          "%",   10.0, hi=100, system="gv1"),
-    Point(9,  "dmd_sg1_feed_valve_pct","Demanda valv. alim GV1","%", 10.0, hi=100, system="gv1"),
-    Point(10, "sp_sg2_level_pct",    "SP nivel GV2",          "%",   10.0, hi=100, system="gv2"),
-    Point(11, "dmd_sg2_feed_valve_pct","Demanda valv. alim GV2","%", 10.0, hi=100, system="gv2"),
+    Point(0,  "sp_power_pct",        "Setpoint de potencia",       "%",   10.0, hi=100, system="nucleo"),
+    Point(1,  "dmd_rod_pct",         "Barras controle (% retirada)","%",   10.0, hi=100, system="nucleo"),
+    Point(2,  "dmd_rcp_speed_pct",   "Rotacao bombas RCP",         "%",   10.0, hi=100, system="primario"),
+    Point(3,  "sp_przr_pressure_bar","Setpoint pressao PZR",       "bar", 10.0, lo=120, hi=175, system="primario"),
+    Point(4,  "sp_przr_level_pct",   "Setpoint nivel PZR",         "%",   10.0, hi=100, system="primario"),
+    Point(5,  "sp_boron_ppm",        "Setpoint boro",              "ppm",  1.0, hi=3500, system="primario"),
+    Point(6,  "dmd_turbine_valve_pct","Valvula admissao turbina",  "%",   10.0, hi=100, system="turbina"),
+    Point(7,  "dmd_turbine_load_mwe","Carga da turbina",           "MWe", 10.0, hi=1300, system="turbina"),
+    Point(8,  "sp_sg1_level_pct",    "Setpoint nivel GV1",         "%",   10.0, hi=100, system="gv1"),
+    Point(9,  "dmd_sg1_feed_valve_pct","Valvula agua alim. GV1",   "%", 10.0, hi=100, system="gv1"),
+    Point(10, "sp_sg2_level_pct",    "Setpoint nivel GV2",         "%",   10.0, hi=100, system="gv2"),
+    Point(11, "dmd_sg2_feed_valve_pct","Valvula agua alim. GV2",   "%", 10.0, hi=100, system="gv2"),
 ]
 
 

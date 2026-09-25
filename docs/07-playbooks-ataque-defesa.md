@@ -116,6 +116,35 @@ em coils de segurança) são o sinal.
 
 ---
 
+## PB-07 — LOCA e a prova do Defense-in-Depth
+
+- **Objetivo:** demonstrar que a segurança passiva mitiga um acidente grave — e o
+  que um atacante precisa fazer para transformá-lo em dano.
+- **Cenário:** insira um LOCA pela HMI (painel *Simulação & Malfunções* → LOCA, ou
+  `POST /api/command {"kind":"loca","value":0.6}`). O rompimento não é atacável via
+  Modbus (é físico) — o vetor de ataque é **impedir a mitigação**.
+- **Variante A — salvaguardas ativas (baseline defensivo):** a pressão cai → ESFAS
+  atua → CMT/PRHR injetam, acumuladores e ADS despressurizam, IRWST inunda. O
+  inventário se recupera e o combustível **permanece resfriado**. Blue confirma que
+  o DID nível 3 funcionou (observe `esfas_actuated`, `cmt_injecting`, `ads_stage`).
+- **Variante B — salvaguardas bloqueadas (ataque):** primeiro
+  `python3 tools/attacks.py block_safety` (ou coil `cmd_block_safety`), depois o
+  mesmo LOCA. Sem injeção passiva, o núcleo descobre, o combustível ultrapassa
+  1200 °C e a contenção acumula pressão/radiação. `MITRE T0880 (Loss of Safety)`.
+- **Blue (detectar):** `safety_blocked=1` (anomalia crítica), queda de
+  `primary_inventory_pct` sem recuperação, ausência de atuação do ESFAS quando os
+  setpoints foram atingidos.
+- **Blue (mitigar):** independência e integridade das salvaguardas (rede segregada,
+  chave física para bypass, alarme imediato de bloqueio).
+- **DID:** o **mesmo acidente** tem desfechos opostos conforme a camada 3 esteja
+  íntegra ou não — a lição central do range.
+
+> Cenário operacional relacionado (não-ataque): **Xenônio**. Acelere a escala de
+> tempo, dê SCRAM e observe o pico de Xe em ~9–11 h (o "poço de iodo" que pode
+> impedir a repartida). Útil para entender por que decisões de operação em OT têm
+> consequências de longo prazo que um atacante pode explorar (ex.: forçar SCRAM
+> num momento crítico).
+
 ## Detecção baseada em processo (o diferencial de OT)
 
 Além de rede, o blue team de OT detecta pela **física**: um estado que viola o

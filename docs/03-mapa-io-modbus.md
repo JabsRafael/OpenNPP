@@ -1,12 +1,10 @@
 # Mapa de I/O Modbus — referência
 
-Fonte única de verdade: `simulator/npp/iomap.py`. **Gerado automaticamente** 
-a partir do código — não editar à mão.
+Fonte única de verdade: `simulator/npp/iomap.py`. **Gerado automaticamente** do código.
 
-Codificação: `valor_engenharia = raw / escala`. Registradores são inteiros 
-de 16 bits; pontos com sinal usam complemento de dois.
+Codificação: `valor_engenharia = raw / escala`. Registradores de 16 bits; pontos com sinal usam complemento de dois.
 
-> Nota: a planta é SIMULADA. Estes registradores não controlam hardware real.
+> A planta é SIMULADA — estes registradores não controlam hardware real.
 
 ## Input Registers — sensores (FC4, leitura)
 
@@ -46,6 +44,13 @@ de 16 bits; pontos com sinal usam complemento de dois.
 | 31 | `containment_press_bar` | Contencao pressao | contencao | bar | ×100 | — |
 | 32 | `containment_rad_msvh` | Contencao radiacao | contencao | mSv/h | ×100 | — |
 | 33 | `containment_temp_c` | Contencao temperatura | contencao | degC | ×10 | — |
+| 34 | `xenon_worth_pcm` | Reatividade Xenonio | nucleo | pcm | ×1 | sim |
+| 35 | `xenon_pct` | Concentracao Xe-135 | nucleo | % | ×10 | — |
+| 36 | `iodine_pct` | Concentracao I-135 | nucleo | % | ×10 | — |
+| 37 | `samarium_worth_pcm` | Reatividade Samario | nucleo | pcm | ×1 | sim |
+| 38 | `burnable_poison_pct` | Veneno queimavel restante | nucleo | % | ×10 | — |
+| 39 | `burnup_pct` | Burnup do ciclo | nucleo | % | ×10 | — |
+| 40 | `primary_inventory_pct` | Inventario primario | primario | % | ×10 | — |
 
 ## Discrete Inputs — status/alarmes (FC2, leitura)
 
@@ -105,24 +110,28 @@ de 16 bits; pontos com sinal usam complemento de dois.
 
 | Addr | Chave | Rótulo | Sistema | Unid. | Escala | Faixa |
 |---|---|---|---|---|---|---|
-| 0 | `sp_power_pct` | SP potencia | nucleo | % | ×10 | 0–100 |
-| 1 | `dmd_rod_pct` | Demanda barras | nucleo | % | ×10 | 0–100 |
-| 2 | `dmd_rcp_speed_pct` | Demanda rotacao RCP | primario | % | ×10 | 0–100 |
-| 3 | `sp_przr_pressure_bar` | SP pressao PZR | primario | bar | ×10 | 120–175 |
-| 4 | `sp_przr_level_pct` | SP nivel PZR | primario | % | ×10 | 0–100 |
-| 5 | `sp_boron_ppm` | SP boro | primario | ppm | ×1 | 0–3500 |
-| 6 | `dmd_turbine_valve_pct` | Demanda valv. turbina | turbina | % | ×10 | 0–100 |
-| 7 | `dmd_turbine_load_mwe` | Demanda carga turbina | turbina | MWe | ×10 | 0–1300 |
-| 8 | `sp_sg1_level_pct` | SP nivel GV1 | gv1 | % | ×10 | 0–100 |
-| 9 | `dmd_sg1_feed_valve_pct` | Demanda valv. alim GV1 | gv1 | % | ×10 | 0–100 |
-| 10 | `sp_sg2_level_pct` | SP nivel GV2 | gv2 | % | ×10 | 0–100 |
-| 11 | `dmd_sg2_feed_valve_pct` | Demanda valv. alim GV2 | gv2 | % | ×10 | 0–100 |
+| 0 | `sp_power_pct` | Setpoint de potencia | nucleo | % | ×10 | 0–100 |
+| 1 | `dmd_rod_pct` | Barras controle (% retirada) | nucleo | % | ×10 | 0–100 |
+| 2 | `dmd_rcp_speed_pct` | Rotacao bombas RCP | primario | % | ×10 | 0–100 |
+| 3 | `sp_przr_pressure_bar` | Setpoint pressao PZR | primario | bar | ×10 | 120–175 |
+| 4 | `sp_przr_level_pct` | Setpoint nivel PZR | primario | % | ×10 | 0–100 |
+| 5 | `sp_boron_ppm` | Setpoint boro | primario | ppm | ×1 | 0–3500 |
+| 6 | `dmd_turbine_valve_pct` | Valvula admissao turbina | turbina | % | ×10 | 0–100 |
+| 7 | `dmd_turbine_load_mwe` | Carga da turbina | turbina | MWe | ×10 | 0–1300 |
+| 8 | `sp_sg1_level_pct` | Setpoint nivel GV1 | gv1 | % | ×10 | 0–100 |
+| 9 | `dmd_sg1_feed_valve_pct` | Valvula agua alim. GV1 | gv1 | % | ×10 | 0–100 |
+| 10 | `sp_sg2_level_pct` | Setpoint nivel GV2 | gv2 | % | ×10 | 0–100 |
+| 11 | `dmd_sg2_feed_valve_pct` | Valvula agua alim. GV2 | gv2 | % | ×10 | 0–100 |
 
 ---
 
-### Resumo de contagem
+### Controles fora do Modbus (meta-simulação, via API HTTP)
 
-- Input Registers: **34**
-- Discrete Inputs: **27**
-- Coils: **17**
-- Holding Registers: **12**
+Não são pontos de processo — não integram a superfície de ataque OT:
+
+- `escala de tempo` (`POST /api/command {kind:"timescale"}`) — acelera só a evolução de venenos/burnup.
+- `LOCA` (`POST /api/command {kind:"loca", value:0..1}`) — insere rompimento no primário.
+
+### Contagem
+
+- Input Registers: **41** · Discrete Inputs: **27** · Coils: **17** · Holding Registers: **12**
